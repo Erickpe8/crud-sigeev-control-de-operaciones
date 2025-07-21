@@ -30,63 +30,69 @@
 
             <div>
                 <label>Nombres</label>
-                <input type="text" placeholder="Digite sus nombres" class="w-full border rounded px-3 py-2">
+                <input type="text" id="name" placeholder="Digite sus nombres" class="w-full border rounded px-3 py-2">
             </div>
 
             <div>
                 <label>Apellidos</label>
-                <input type="text" placeholder="Digite sus apellidos" class="w-full border rounded px-3 py-2">
+                <input type="text" id="lastName" placeholder="Digite sus apellidos" class="w-full border rounded px-3 py-2">
             </div>
 
             <div class="col-span-2">
                 <label>Correo Electrónico</label>
-                <input type="email" placeholder="Digite su correo electrónico" class="w-full border rounded px-3 py-2">
+                <input type="email" id="email" placeholder="Digite su correo electrónico" class="w-full border rounded px-3 py-2">
             </div>
 
             <div>
                 <label>País</label>
-                <input type="text" placeholder="Digite su país" class="w-full border rounded px-3 py-2">
+                <input type="text" id="country" placeholder="Digite su país" class="w-full border rounded px-3 py-2">
             </div>
 
             <div>
                 <label>Ciudad</label>
-                <input type="text" placeholder="Digite su Ciudad" class="w-full border rounded px-3 py-2">
+                <input type="text" id="city" placeholder="Digite su Ciudad" class="w-full border rounded px-3 py-2">
             </div>
 
             <div>
                 <label>Tipo de Persona</label>
-                <select class="w-full border rounded px-3 py-2">
+                <select id="tipePerson" class="w-full border rounded px-3 py-2">
                     <option>Selecciona</option>
                 </select>
             </div>
 
             <div>
                 <label>Sexo</label>
-                <select class="w-full border rounded px-3 py-2">
-                    <option>Selecciona</option>
+                <select id="gender" class="w-full border rounded px-3 py-2">
+                    <option value="">Selecciona</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="femenino">Femenino</option>
+                    <option value="otro">Otro</option>
                 </select>
             </div>
 
             <div>
                 <label>Tipo de Documento</label>
-                <select class="w-full border rounded px-3 py-2">
-                    <option>Selecciona</option>
+                <select id="docType" class="w-full border rounded px-3 py-2">
+                    <option value="">Selecciona</option>
+                    <option value="cc">Cédula de Ciudadanía</option>
+                    <option value="ti">Tarjeta de Identidad</option>
+                    <option value="ce">Cédula de Extranjería</option>
                 </select>
             </div>
 
             <div>
                 <label>Número de Documento</label>
-                <input type="text" placeholder="Digite su número de documento" class="w-full border rounded px-3 py-2">
+                <input id="docNumber" type="text" placeholder="Digite su número de documento" class="w-full border rounded px-3 py-2">
             </div>
 
             <div>
                 <label>Teléfono</label>
-                <input type="text" placeholder="Digite su número de teléfono" class="w-full border rounded px-3 py-2">
+                <input id="phone" type="text" placeholder="Digite su número de teléfono" class="w-full border rounded px-3 py-2">
             </div>
 
             <div>
                 <label>Fecha de Nacimiento</label>
-                <input type="date" class="w-full border rounded px-3 py-2">
+                <input id="birthDate" type="date" class="w-full border rounded px-3 py-2">
             </div>
 
             <!-- Contraseña -->
@@ -114,7 +120,7 @@
 
         <!-- Botones -->
         <div class="flex gap-4 mt-4">
-            <button type="submit" class="flex items-center justify-center gap-2 bg-[#ff0000] text-white px-6 py-2 rounded w-full">
+            <button type="button" onclick="registrar()" class="flex items-center justify-center gap-2 bg-[#ff0000] text-white px-6 py-2 rounded w-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M5 13l4 4L19 7" />
                 </svg>
@@ -143,12 +149,38 @@
             btn.textContent = input.type === 'password' ? '👁' : '🙈';
         }
     </script>
+
     <script>
-    document.getElementById('registerForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // evita el envío real del formulario
-        alert('Hola mundo');    // muestra la alerta
-    });
-</script>
+        const registrar = () => {
+            const name = document.getElementById('name').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const country = document.getElementById('country').value;
+            const city = document.getElementById('city').value;
+            const tipePerson = document.getElementById('tipePerson').value;
+            const gender = document.getElementById('gender').value;
+            const docType = document.getElementById('docType').value;
+            const docNumber = document.getElementById('docNumber').value;
+            const phone = document.getElementById('phone').value;
+            const birthDate = document.getElementById('birthDate').value;
+
+            console.log({
+                name,
+                lastName,
+                email,
+                country,
+                city,
+                tipePerson,
+                gender,
+                docType,
+                docNumber,
+                phone,
+                birthDate
+            });
+
+            alert(`Nombre: ${name}, Apellido: ${lastName}`);
+        };
+    </script>
 
 </body>
 </html>
