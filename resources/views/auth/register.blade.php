@@ -5,7 +5,6 @@
     <title>Registro - FESC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
@@ -29,32 +28,26 @@
 
         <!-- Campos -->
         <div class="grid grid-cols-2 gap-4 mt-6">
-
             <div>
                 <label>Nombres</label>
                 <input type="text" id="name" placeholder="Digite sus nombres" class="w-full border rounded px-3 py-2">
             </div>
-
             <div>
                 <label>Apellidos</label>
                 <input type="text" id="lastName" placeholder="Digite sus apellidos" class="w-full border rounded px-3 py-2">
             </div>
-
             <div class="col-span-2">
                 <label>Correo Electrónico</label>
                 <input type="email" id="email" placeholder="Digite su correo electrónico" class="w-full border rounded px-3 py-2">
             </div>
-
             <div>
                 <label>País</label>
                 <input type="text" id="country" placeholder="Digite su país" class="w-full border rounded px-3 py-2">
             </div>
-
             <div>
                 <label>Ciudad</label>
                 <input type="text" id="city" placeholder="Digite su Ciudad" class="w-full border rounded px-3 py-2">
             </div>
-
             <div>
                 <label>Tipo de Persona</label>
                 <select id="tipePerson" class="w-full border rounded px-3 py-2">
@@ -66,7 +59,6 @@
                     <option value="5">Gobierno</option>
                 </select>
             </div>
-
             <div>
                 <label>Sexo</label>
                 <select id="gender" class="w-full border rounded px-3 py-2">
@@ -77,7 +69,6 @@
                     <option value="4">Otro</option>
                 </select>
             </div>
-
             <div>
                 <label>Tipo de Documento</label>
                 <select id="docType" class="w-full border rounded px-3 py-2">
@@ -89,30 +80,23 @@
                     <option value="5">Tarjeta de Residencia</option>
                 </select>
             </div>
-
             <div>
                 <label>Número de Documento</label>
                 <input id="docNumber" type="text" placeholder="Digite su número de documento" class="w-full border rounded px-3 py-2">
             </div>
-
             <div>
                 <label>Teléfono</label>
                 <input id="phone" type="text" placeholder="Digite su número de teléfono" class="w-full border rounded px-3 py-2">
             </div>
-
             <div>
                 <label>Fecha de Nacimiento</label>
                 <input id="birthDate" type="date" class="w-full border rounded px-3 py-2">
             </div>
-
-            <!-- Contraseña -->
             <div class="relative">
                 <label>Contraseña</label>
                 <input id="password" type="password" placeholder="Password" class="w-full border rounded px-3 py-2 pr-10">
                 <button type="button" onclick="togglePassword('password', this)" class="absolute right-3 top-8 text-gray-500">👁</button>
             </div>
-
-            <!-- Confirmar contraseña -->
             <div class="relative">
                 <label>Confirmar Contraseña</label>
                 <input id="confirm" type="password" placeholder="Confirmar Contraseña" class="w-full border rounded px-3 py-2 pr-10">
@@ -125,7 +109,8 @@
             <input type="checkbox" class="mr-2" checked>
             <span class="text-sm text-red-600">
                 Acepto los
-            <a href="/terminosycondiciones" class="text-red-600 hover:underline">Términos y Condiciones</a> Y la politica de privacidad
+                <a href="/terminosycondiciones" class="text-red-600 hover:underline">Términos y Condiciones</a> y la política de privacidad
+            </span>
         </div>
 
         <!-- Botones -->
@@ -150,7 +135,11 @@
                 <path fill="#ffffff" d="M0,100 C480,0 960,100 1440,0 L1440,100 L0,100 Z"></path>
             </svg>
         </div>
+
+        <div id="errores-validacion" class="space-y-2 my-4"></div>
     </form>
+
+    <div id="alert-container" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
     <script>
         function togglePassword(id, btn) {
@@ -160,82 +149,89 @@
         }
     </script>
 
+
     <script>
-        const registrar = async () => {
-            try {
-                // Obtener y limpiar valores directamente
-                const first_name = document.getElementById('name').value.trim();
-                const last_name = document.getElementById('lastName').value.trim();
-                const email = document.getElementById('email').value.trim();
-                const gender_id = document.getElementById('gender').value;
-                const document_type_id = document.getElementById('docType').value;
-                const document_number = document.getElementById('docNumber').value.trim();
-                const birthdate = document.getElementById('birthDate').value;
-                const user_type_id = document.getElementById('tipePerson').value;
-                const company_name = document.getElementById('companyName')?.value.trim() || null;
-                const company_address = document.getElementById('companyAddress')?.value.trim() || null;
+    const registrar = async () => {
+        limpiarErrores();
 
-                console.info('📤 Enviando datos...');
-                console.table({
-                    first_name,
-                    last_name,
-                    email,
-                    gender_id,
-                    document_type_id,
-                    document_number,
-                    birthdate,
-                    user_type_id,
-                    academic_program_id: null,
-                    institution_id: null,
-                    company_name,
-                    company_address,
-                    status: true,
-                    accepted_terms: true,
-                    password: null
-                });
-
-                // Enviar directamente los parámetros en el POST
-                const response = await axios.post('/api/registrar', {
-                    first_name,
-                    last_name,
-                    email,
-                    gender_id,
-                    document_type_id,
-                    document_number,
-                    birthdate,
-                    user_type_id,
-                    academic_program_id: null,
-                    institution_id: null,
-                    company_name,
-                    company_address,
-                    status: true,
-                    accepted_terms: true,
-                    password: null
-                });
-
-                console.info('✅ Respuesta exitosa:');
-                console.table(response.data);
-                alert("✅ Usuario registrado exitosamente");
-
-            } catch (error) {
-                if (error.response?.status === 422) {
-                    const validationErrors = error.response.data.errors;
-                    console.error('❌ Errores de validación:', validationErrors);
-
-                    // Mostrar errores específicos al usuario
-                    let mensaje = '❌ Errores encontrados:\n';
-                    for (const campo in validationErrors) {
-                        mensaje += `- ${validationErrors[campo][0]}\n`;
-                    }
-
-                    alert(mensaje);
-                } else {
-                    console.error('❌ Error inesperado:', error);
-                    alert('⚠️ Ocurrió un error al registrar el usuario. Intenta nuevamente.');
-                }
-            }
+        const formData = {
+            first_name: document.getElementById('name').value,
+            last_name: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            confirm_password: document.getElementById('confirm').value,
+            country: document.getElementById('country').value,
+            city: document.getElementById('city').value,
+            user_type_id: document.getElementById('tipePerson').value,
+            gender_id: document.getElementById('gender').value,
+            document_type_id: document.getElementById('docType').value,
+            document_number: document.getElementById('docNumber').value,
+            phone: document.getElementById('phone').value,
+            birthdate: document.getElementById('birthDate').value,
+            accepted_terms: true
         };
-    </script>
 
+        if (formData.password !== formData.confirm_password) {
+            showAlert('error', 'Las contraseñas no coinciden');
+            return;
+        }
+
+        try {
+            const response = await axios.post('/api/registrar', formData);
+
+            showAlert('info', 'Usuario registrado exitosamente');
+            document.getElementById('registerForm').reset();
+        } catch (error) {
+            const errData = error.response?.data || error.message || error;
+
+            if (error.response?.status === 422) {
+                const errores = errData.errors || {};
+                Object.entries(errores).forEach(([campo, mensajes]) => {
+                    mensajes.forEach(mensaje => {
+                        showAlert('error', mensaje);
+                    });
+                });
+            } else if (error.response?.status === 400) {
+                showAlert('error', 'Error en la solicitud. Revisa los campos.');
+            } else {
+                showAlert('error', 'Error inesperado. Intenta más tarde.');
+            }
+        }
+    };
+
+    const limpiarErrores = () => {
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.classList.remove('border-red-500', 'ring', 'ring-red-300');
+        });
+    };
+
+    const showAlert = (type = 'info', message = '') => {
+        const alertId = `alert-${Date.now()}`;
+        const color = type === 'error'
+            ? { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-400' }
+            : { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-400' };
+
+        const div = document.createElement('div');
+        div.id = alertId;
+        div.className = `p-4 rounded shadow border-l-4 w-96 ${color.bg} ${color.text} ${color.border}`;
+        div.innerHTML = `
+            <div class="flex items-start">
+                <svg class="w-5 h-5 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-10H9v4h2V8zm0 6H9v2h2v-2z" />
+                </svg>
+                <div class="text-sm">${message}</div>
+            </div>
+        `;
+
+        const container = document.getElementById('alert-container');
+        container.appendChild(div);
+
+        setTimeout(() => {
+            const el = document.getElementById(alertId);
+            if (el) el.remove();
+        }, 5000);
+    };
+    </script>
 </body>
 </html>
