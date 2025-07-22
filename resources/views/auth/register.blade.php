@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Registro - FESC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
@@ -57,11 +59,11 @@
                 <label>Tipo de Persona</label>
                 <select id="tipePerson" class="w-full border rounded px-3 py-2">
                     <option>Selecciona</option>
-                    <option value="Persona Natural">Persona Natural</option>
-                    <option value="Persona Jurídica">Persona Jurídica</option>
-                    <option value="Compañia">Entidad Legal o Coorporación</option>
-                    <option value="Estudiante">Estudiante</option>
-                    <option value="Gobierno">Gobierno</option>
+                    <option value="1">Persona Natural</option>
+                    <option value="2">Persona Jurídica</option>
+                    <option value="3">Entidad Legal o Coorporación</option>
+                    <option value="4">Estudiante</option>
+                    <option value="5">Gobierno</option>
                 </select>
             </div>
 
@@ -69,10 +71,10 @@
                 <label>Sexo</label>
                 <select id="gender" class="w-full border rounded px-3 py-2">
                     <option value="">Selecciona</option>
-                    <option value="Hombre">Hombre</option>
-                    <option value="Mujer">Mujer</option>
-                    <option value="Prefiero no decir">Prefiero no decir</option>
-                    <option value="Otro">Otro</option>
+                    <option value="1">Hombre</option>
+                    <option value="2">Mujer</option>
+                    <option value="3">Prefiero no decir</option>
+                    <option value="4">Otro</option>
                 </select>
             </div>
 
@@ -80,11 +82,11 @@
                 <label>Tipo de Documento</label>
                 <select id="docType" class="w-full border rounded px-3 py-2">
                     <option value="">Selecciona</option>
-                    <option value="CC">Cédula de Ciudadanía</option>
-                    <option value="PASS">Pasaporte</option>
-                    <option value="TI">Tarjeta de Identidad</option>
-                    <option value="CE">Cédula de Extranjería</option>
-                    <option value="TR">Tarjeta de Residencia</option>
+                    <option value="1">Cédula de Ciudadanía</option>
+                    <option value="2">Pasaporte</option>
+                    <option value="3">Tarjeta de Identidad</option>
+                    <option value="4">Cédula de Extranjería</option>
+                    <option value="5">Tarjeta de Residencia</option>
                 </select>
             </div>
 
@@ -160,33 +162,49 @@
 
     <script>
         const registrar = () => {
-            const name = document.getElementById('name').value;
-            const lastName = document.getElementById('lastName').value;
+            const first_name = document.getElementById('name').value;
+            const last_name = document.getElementById('lastName').value;
             const email = document.getElementById('email').value;
-            const country = document.getElementById('country').value;
-            const city = document.getElementById('city').value;
-            const tipePerson = document.getElementById('tipePerson').value;
-            const gender = document.getElementById('gender').value;
-            const docType = document.getElementById('docType').value;
-            const docNumber = document.getElementById('docNumber').value;
-            const phone = document.getElementById('phone').value;
-            const birthDate = document.getElementById('birthDate').value;
+            const gender_id = document.getElementById('gender').value;
+            const document_type_id = document.getElementById('docType').value;
+            const document_number = document.getElementById('docNumber').value;
+            const birthdate = document.getElementById('birthDate').value;
+            const user_type_id = document.getElementById('tipePerson').value;
+            const academic_program_id = null; // Puedes asignarlo según el formulario
+            const institution_id = null; // Puedes asignarlo si aplica
+            const company_name = document.getElementById('companyName')?.value ?? null;
+            const company_address = document.getElementById('companyAddress')?.value ?? null;
+            const status = true; // Si quieres dejarlo activo por defecto
+            const accepted_terms = true; // Supón que se aceptaron términos
+            const password = null; // Laravel generará "temporal123" si es null
 
-            console.log({
-                name,
-                lastName,
+            const data = {
+                first_name,
+                last_name,
                 email,
-                country,
-                city,
-                tipePerson,
-                gender,
-                docType,
-                docNumber,
-                phone,
-                birthDate
-            });
+                gender_id,
+                document_type_id,
+                document_number,
+                birthdate,
+                user_type_id,
+                academic_program_id,
+                institution_id,
+                company_name,
+                company_address,
+                status,
+                accepted_terms,
+                password
+            };
 
-            alert(`Nombre: ${name}, Apellido: ${lastName}`);
+            axios.post('/api/registrar', data)
+                .then(response => {
+                    console.table(response.data);
+                    alert("Usuario registrado exitosamente");
+                })
+                .catch(error => {
+                    console.error('Error al registrar:', error.response?.data || error);
+                    alert("Error al registrar. Revisa los campos.");
+                });
         };
     </script>
 

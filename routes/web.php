@@ -27,7 +27,6 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-
 // Ruta de terminos y condiciones
 Route::get('/terminosycondiciones', function () {
     return view('terminosycondiciones');
