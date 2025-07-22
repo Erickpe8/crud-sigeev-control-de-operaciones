@@ -18,7 +18,8 @@ class DatabaseSeeder extends Seeder
             UsersTypesSeeder::class,
             InstitutionsSeeder::class,
             AcademicProgramsSeeder::class,
-            // UsersSeeder::class,
+            RoleSeeder::class,
+            UsersSeeder::class,
         ]);
     }
 }

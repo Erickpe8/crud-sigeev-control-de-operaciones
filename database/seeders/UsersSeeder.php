@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Models\User;
 use Carbon\Carbon;
@@ -14,27 +13,25 @@ class UsersSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            // Manuel Parada
             [
-                'id' => 1, 
+                'id' => 1,
                 'uuid' => Str::uuid(),
                 'first_name' => 'Manuel',
                 'last_name' => 'Parada',
                 'email' => 'manuel.parada@comfanorte.edu.co',
                 'password' => Hash::make('Password123'),
                 'birthdate' => Carbon::create(1985, 7, 15),
-                'gender_id' => 1, 
+                'gender_id' => 1,
                 'document_type_id' => 1,
-                'user_type_id' => 1, 
-                'academic_program_id' => 1, 
+                'user_type_id' => 1,
+                'academic_program_id' => 1,
                 'document_number' => '10012345',
                 'institution_id' => 1,
                 'accepted_terms' => true,
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
+                'role' => 'super admin'
             ],
-            
-            // Erick Sebastián
             [
                 'id' => 2,
                 'uuid' => Str::uuid(),
@@ -51,10 +48,9 @@ class UsersSeeder extends Seeder
                 'institution_id' => 1,
                 'accepted_terms' => true,
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
+                'role' => 'admin'
             ],
-            
-            // Nelly Cano
             [
                 'id' => 3,
                 'uuid' => Str::uuid(),
@@ -63,7 +59,7 @@ class UsersSeeder extends Seeder
                 'email' => 'nelly.cano@comfanorte.edu.co',
                 'password' => Hash::make('Password123'),
                 'birthdate' => Carbon::create(1990, 11, 5),
-                'gender_id' => 1, 
+                'gender_id' => 1,
                 'document_type_id' => 1,
                 'user_type_id' => 1,
                 'academic_program_id' => 1,
@@ -71,10 +67,9 @@ class UsersSeeder extends Seeder
                 'institution_id' => 1,
                 'accepted_terms' => true,
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
+                'role' => 'user'
             ],
-            
-            // Santiago Rueda
             [
                 'id' => 4,
                 'uuid' => Str::uuid(),
@@ -91,12 +86,16 @@ class UsersSeeder extends Seeder
                 'institution_id' => 1,
                 'accepted_terms' => true,
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
+                'role' => 'user'
             ]
         ];
 
-        foreach ($users as $user) {
-            User::create($user);
+        foreach ($users as $userData) {
+            $role = $userData['role'];
+            unset($userData['role']); // eliminar para evitar error de columna no existente
+            $user = User::create($userData);
+            $user->assignRole($role);
         }
     }
 }

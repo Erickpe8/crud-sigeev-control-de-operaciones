@@ -31,3 +31,18 @@ Route::get('/register', function () {
 Route::get('/terminosycondiciones', function () {
     return view('terminosycondiciones');
 })->name('terminos');
+
+
+//Spatie Permission Routes //Rutas creadas para trabajar más adelante con los roles y permisos de los usuarios
+Route::middleware(['auth', 'role:super admin'])->group(function () {
+    Route::get('/dashboard/superadmin', [SuperAdminController::class, 'index']);
+});
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/dashboard/admin', [AdminController::class, 'index']);
+});
+
+Route::middleware(['auth', 'role:user'])->group(function () {
+    Route::get('/dashboard/user', [UserController::class, 'index']);
+});
+
