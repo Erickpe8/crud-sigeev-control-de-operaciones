@@ -57,6 +57,11 @@
                 <label>Tipo de Persona</label>
                 <select id="tipePerson" class="w-full border rounded px-3 py-2">
                     <option>Selecciona</option>
+                    <option value="Persona Natural">Persona Natural</option>
+                    <option value="Persona Jurídica">Persona Jurídica</option>
+                    <option value="Compañia">Entidad Legal o Coorporación</option>
+                    <option value="Estudiante">Estudiante</option>
+                    <option value="Gobierno">Gobierno</option>
                 </select>
             </div>
 
@@ -64,9 +69,10 @@
                 <label>Sexo</label>
                 <select id="gender" class="w-full border rounded px-3 py-2">
                     <option value="">Selecciona</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="otro">Otro</option>
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer">Mujer</option>
+                    <option value="Prefiero no decir">Prefiero no decir</option>
+                    <option value="Otro">Otro</option>
                 </select>
             </div>
 
@@ -74,9 +80,11 @@
                 <label>Tipo de Documento</label>
                 <select id="docType" class="w-full border rounded px-3 py-2">
                     <option value="">Selecciona</option>
-                    <option value="cc">Cédula de Ciudadanía</option>
-                    <option value="ti">Tarjeta de Identidad</option>
-                    <option value="ce">Cédula de Extranjería</option>
+                    <option value="CC">Cédula de Ciudadanía</option>
+                    <option value="PASS">Pasaporte</option>
+                    <option value="TI">Tarjeta de Identidad</option>
+                    <option value="CE">Cédula de Extranjería</option>
+                    <option value="TR">Tarjeta de Residencia</option>
                 </select>
             </div>
 

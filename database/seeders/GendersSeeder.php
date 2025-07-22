@@ -6,11 +6,11 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use App\Models\Gender;
-use Carbon\Carbon;  
+use Carbon\Carbon;
 
 class GendersSeeder extends Seeder
 {
-   public function run(): void
+    public function run(): void
 {
     $genders = [
         [

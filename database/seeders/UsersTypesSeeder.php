@@ -6,14 +6,14 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use App\Models\UserType;
-use Carbon\Carbon;  
+use Carbon\Carbon;
 
 class UsersTypesSeeder extends Seeder
-{  
+{
 
     public function run(): void
     {
-      $user_types = [
+    $user_types = [
 
         [
             'uuid' => Str::uuid(),
@@ -32,10 +32,10 @@ class UsersTypesSeeder extends Seeder
         [
             'uuid' => Str::uuid(),
             'type' => 'Compañia',
-            'description' => 'Entidad Legal o Coorporacion',
+            'description' => 'Entidad Legal o Coorporación',
             'created_at' => now(),
             'updated_at' => now()
-        ],  
+        ],
         [
             'uuid' => Str::uuid(),
             'type' => 'Estudiante',
