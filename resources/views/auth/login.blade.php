@@ -55,8 +55,8 @@
                     <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
                     <div class="relative mt-1">
                         <input id="password" name="password" type="password" required
-                               class="block w-full rounded-md border-gray-300 shadow-sm focus:ring-[#ff0000] focus:border-[#ff0000] pr-10"
-                               placeholder="••••••••">
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:ring-[#ff0000] focus:border-[#ff0000] pr-10"
+                            placeholder="••••••••">
                         <button type="button" onclick="togglePassword()"
                             class="absolute right-3 top-2.5 text-gray-600 hover:text-gray-900 transition-colors duration-200 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
@@ -84,9 +84,9 @@
                     <button type="submit"
                             class="w-full bg-[#ff0000] hover:bg-red-600 text-white py-2 rounded-md font-medium transition duration-200 flex items-center justify-center">
                         <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                             xmlns="http://www.w3.org/2000/svg">
+                            xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M5 13l4 4L19 7"/>
+                                d="M5 13l4 4L19 7"/>
                         </svg>
                         Ingresar
                     </button>

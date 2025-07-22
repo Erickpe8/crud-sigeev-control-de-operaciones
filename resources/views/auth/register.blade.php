@@ -161,50 +161,67 @@
     </script>
 
     <script>
-        const registrar = () => {
-            const first_name = document.getElementById('name').value;
-            const last_name = document.getElementById('lastName').value;
-            const email = document.getElementById('email').value;
-            const gender_id = document.getElementById('gender').value;
-            const document_type_id = document.getElementById('docType').value;
-            const document_number = document.getElementById('docNumber').value;
-            const birthdate = document.getElementById('birthDate').value;
-            const user_type_id = document.getElementById('tipePerson').value;
-            const academic_program_id = null; // Puedes asignarlo según el formulario
-            const institution_id = null; // Puedes asignarlo si aplica
-            const company_name = document.getElementById('companyName')?.value ?? null;
-            const company_address = document.getElementById('companyAddress')?.value ?? null;
-            const status = true; // Si quieres dejarlo activo por defecto
-            const accepted_terms = true; // Supón que se aceptaron términos
-            const password = null; // Laravel generará "temporal123" si es null
+        const registrar = async () => {
+            try {
+                // Obtener y limpiar valores directamente
+                const first_name = document.getElementById('name').value.trim();
+                const last_name = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const gender_id = document.getElementById('gender').value;
+                const document_type_id = document.getElementById('docType').value;
+                const document_number = document.getElementById('docNumber').value.trim();
+                const birthdate = document.getElementById('birthDate').value;
+                const user_type_id = document.getElementById('tipePerson').value;
+                const company_name = document.getElementById('companyName')?.value.trim() || null;
+                const company_address = document.getElementById('companyAddress')?.value.trim() || null;
 
-            const data = {
-                first_name,
-                last_name,
-                email,
-                gender_id,
-                document_type_id,
-                document_number,
-                birthdate,
-                user_type_id,
-                academic_program_id,
-                institution_id,
-                company_name,
-                company_address,
-                status,
-                accepted_terms,
-                password
-            };
-
-            axios.post('/api/registrar', data)
-                .then(response => {
-                    console.table(response.data);
-                    alert("Usuario registrado exitosamente");
-                })
-                .catch(error => {
-                    console.error('Error al registrar:', error.response?.data || error);
-                    alert("Error al registrar. Revisa los campos.");
+                console.info('📤 Enviando datos...');
+                console.table({
+                    first_name,
+                    last_name,
+                    email,
+                    gender_id,
+                    document_type_id,
+                    document_number,
+                    birthdate,
+                    user_type_id,
+                    academic_program_id: null,
+                    institution_id: null,
+                    company_name,
+                    company_address,
+                    status: true,
+                    accepted_terms: true,
+                    password: null
                 });
+
+                // Enviar directamente los parámetros en el POST
+                const response = await axios.post('/api/registrar', {
+                    first_name,
+                    last_name,
+                    email,
+                    gender_id,
+                    document_type_id,
+                    document_number,
+                    birthdate,
+                    user_type_id,
+                    academic_program_id: null,
+                    institution_id: null,
+                    company_name,
+                    company_address,
+                    status: true,
+                    accepted_terms: true,
+                    password: null
+                });
+
+                console.info('✅ Respuesta exitosa:');
+                console.table(response.data);
+                alert("✅ Usuario registrado exitosamente");
+
+            } catch (error) {
+                const errData = error.response?.data || error.message || error;
+                console.error('❌ Error al registrar:', errData);
+                alert("⚠️ Ocurrió un error al registrar el usuario. Revisa los campos e intenta nuevamente.");
+            }
         };
     </script>
 
