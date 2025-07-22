@@ -218,9 +218,21 @@
                 alert("✅ Usuario registrado exitosamente");
 
             } catch (error) {
-                const errData = error.response?.data || error.message || error;
-                console.error('❌ Error al registrar:', errData);
-                alert("⚠️ Ocurrió un error al registrar el usuario. Revisa los campos e intenta nuevamente.");
+                if (error.response?.status === 422) {
+                    const validationErrors = error.response.data.errors;
+                    console.error('❌ Errores de validación:', validationErrors);
+
+                    // Mostrar errores específicos al usuario
+                    let mensaje = '❌ Errores encontrados:\n';
+                    for (const campo in validationErrors) {
+                        mensaje += `- ${validationErrors[campo][0]}\n`;
+                    }
+
+                    alert(mensaje);
+                } else {
+                    console.error('❌ Error inesperado:', error);
+                    alert('⚠️ Ocurrió un error al registrar el usuario. Intenta nuevamente.');
+                }
             }
         };
     </script>
