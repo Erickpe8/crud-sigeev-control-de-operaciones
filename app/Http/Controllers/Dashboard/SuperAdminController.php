@@ -9,6 +9,6 @@ class SuperAdminController extends Controller
 {
     public function index()
     {
-        return view('dashboards.superadmin');
+        return view('dashboards.superadmin.superadmin');
     }
 }

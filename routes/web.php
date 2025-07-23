@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\SuperAdminController;
 use App\Http\Controllers\Dashboard\AdminController;
@@ -10,43 +11,47 @@ use App\Http\Controllers\Dashboard\UserController;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Aquí se registran las rutas web para la aplicación.
-| Estas rutas están asignadas al grupo de middleware "web".
-|
 */
 
-// Ruta principal
-Route::get('/', function () {
-    return view('welcome');
-});
+// Rutas públicas
+Route::view('/', 'welcome');
+Route::view('/login', 'auth.login')->name('login');
+Route::view('/register', 'auth.register')->name('register');
+Route::view('/terminosycondiciones', 'terminosycondiciones')->name('terminos');
 
-// Rutas de vistas de autenticación
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
-
-Route::post('/logout', function () {
-    Auth::logout();
-    return redirect('/login');
-})->name('logout');
-
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
-
-// Ruta de términos y condiciones
-Route::get('/terminosycondiciones', function () {
-    return view('terminosycondiciones');
-})->name('terminos');
-
-// Acción de login
+// Autenticación
 Route::post('/login', [LoginController::class, 'login'])->name('login.perform');
 
-// Rutas protegidas por roles (Spatie)
-Route::middleware('auth')->group(function () {
-    Route::middleware('role:super admin')->get('/dashboard/superadmin', [SuperAdminController::class, 'index'])->name('dashboards.superadmin');
-    Route::middleware('role:admin')->get('/dashboard/admin', [AdminController::class, 'index'])->name('dashboards.admin');
-    Route::middleware('role:user')->get('/dashboard/user', [UserController::class, 'index'])->name('dashboards.user');
-});
+// Cierre de sesión
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect()->route('login');
+})->name('logout');
 
+// Rutas protegidas por autenticación
+Route::middleware(['auth'])->group(function () {
+
+    // Super Admin
+    Route::middleware('role:super admin')->group(function () {
+        Route::get('/dashboard/superadmin', [SuperAdminController::class, 'index'])
+            ->name('dashboards.superadmin');
+        // Puedes añadir más rutas para super admin aquí
+    });
+
+    // Admin
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/dashboard/admin', [AdminController::class, 'index'])
+            ->name('dashboards.admin');
+
+        Route::put('/users/{user}', [AdminController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
+    });
+
+    // Usuario estándar
+    Route::middleware('role:user')->group(function () {
+        Route::get('/dashboard/user', [UserController::class, 'index'])
+            ->name('dashboards.user');
+    });
+});
