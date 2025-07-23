@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
+    /**
+     * Maneja el intento de login del usuario.
+     */
     public function login(Request $request)
     {
         // Validamos el request con reglas claras
@@ -37,5 +40,18 @@ class LoginController extends Controller
         return back()->withErrors([
             'email' => 'Las credenciales proporcionadas no son válidas.',
         ])->withInput(); // Mantiene el campo email escrito
+    }
+
+    /**
+     * Cierra la sesión del usuario y destruye la sesión.
+     */
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();      // Invalida la sesión
+        $request->session()->regenerateToken(); // Regenera el token CSRF
+
+        return redirect('/login')->with('status', 'Sesión cerrada correctamente.');
     }
 }

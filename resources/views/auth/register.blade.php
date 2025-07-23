@@ -177,7 +177,7 @@
         }
 
         try {
-            const response = await axios.post('/api/registrar', formData);
+            const response = await axios.post('/registrar', formData);
 
             showAlert('info', 'Usuario registrado exitosamente');
             document.getElementById('registerForm').reset();
