@@ -1,24 +1,27 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Dashboard\SuperAdminController;
+use App\Http\Controllers\Dashboard\AdminController;
+use App\Http\Controllers\Dashboard\UserController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
+| Aquí se registran las rutas web para la aplicación.
+| Estas rutas están asignadas al grupo de middleware "web".
 |
 */
 
+// Ruta principal
 Route::get('/', function () {
     return view('welcome');
 });
 
-//Rutas de autenticación
-
+// Rutas de vistas de autenticación
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -27,22 +30,18 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-// Ruta de terminos y condiciones
+// Ruta de términos y condiciones
 Route::get('/terminosycondiciones', function () {
     return view('terminosycondiciones');
 })->name('terminos');
 
+// Acción de login
+Route::post('/login', [LoginController::class, 'login'])->name('login.perform');
 
-//Spatie Permission Routes //Rutas creadas para trabajar más adelante con los roles y permisos de los usuarios
-Route::middleware(['auth', 'role:super admin'])->group(function () {
-    Route::get('/dashboard/superadmin', [SuperAdminController::class, 'index']);
-});
-
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/dashboard/admin', [AdminController::class, 'index']);
-});
-
-Route::middleware(['auth', 'role:user'])->group(function () {
-    Route::get('/dashboard/user', [UserController::class, 'index']);
+// Rutas protegidas por roles (Spatie)
+Route::middleware('auth')->group(function () {
+    Route::middleware('role:super admin')->get('/dashboard/superadmin', [SuperAdminController::class, 'index'])->name('dashboards.superadmin');
+    Route::middleware('role:admin')->get('/dashboard/admin', [AdminController::class, 'index'])->name('dashboards.admin');
+    Route::middleware('role:user')->get('/dashboard/user', [UserController::class, 'index'])->name('dashboards.user');
 });
 
