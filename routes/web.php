@@ -44,9 +44,14 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard/admin', [AdminController::class, 'index'])
             ->name('dashboards.admin');
+    // Ruta para actualizar usuarios (EDITAR)
+    Route::put('/usuarios/{id}', [AdminController::class, 'update'])
+        ->name('usuarios.update');
 
-        Route::put('/users/{user}', [AdminController::class, 'update'])->name('users.update');
-        Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
+    // Ruta para eliminar usuarios (ELIMINAR)
+    Route::delete('/usuarios/{id}', [UserController::class, 'destroy'])
+        ->name('usuarios.destroy');
+
     });
 
     // Usuario estándar

@@ -2,158 +2,172 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard para administradores</title>
-    @vite('resources/css/app.css')
+    <title>Panel de Administración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 p-6">
+<body class="bg-gray-100 p-6">
 
-    <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">Panel de Administrador</h1>
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded transition-all duration-300">
-                Cerrar sesión
-            </button>
-        </form>
-    </div>
+<div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
+    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios</h1>
 
-    <div class="bg-white p-4 shadow rounded mb-6">
-        <p>Bienvenido administrador, desde aquí puedes gestionar usuarios y editar roles, a excepción del super administrador.</p>
-    </div>
-
-    <div class="bg-white p-6 shadow rounded overflow-auto">
-        <h2 class="text-xl font-semibold mb-4">Gestión de Usuarios</h2>
-        <table class="w-full table-auto border-collapse border border-gray-300 text-sm">
-            <thead>
-                <tr class="bg-gray-200">
-                    <th class="border px-3 py-2">Nombre</th>
-                    <th class="border px-3 py-2">Email</th>
-                    <th class="border px-3 py-2">Rol</th>
-                    <th class="border px-3 py-2">Género</th>
-                    <th class="border px-3 py-2">Tipo Doc</th>
-                    <th class="border px-3 py-2"># Documento</th>
-                    <th class="border px-3 py-2">Tipo Usuario</th>
-                    <th class="border px-3 py-2">Programa Académico</th>
-                    <th class="border px-3 py-2">Institución</th>
-                    <th class="border px-3 py-2">Estado</th>
-                    <th class="border px-3 py-2">Términos</th>
-                    <th class="border px-3 py-2">Acciones</th>
-                </tr>
+    {{-- Tabla de usuarios --}}
+    <section id="tablaUsuarios">
+        <table class="min-w-full table-auto text-sm text-left border-collapse border">
+            <thead class="bg-gray-100 border-b">
+            <tr class="text-gray-600 uppercase text-xs tracking-wider">
+                <th class="px-4 py-3">Nombre</th>
+                <th class="px-4 py-3">Correo</th>
+                <th class="px-4 py-3">Rol</th>
+                <th class="px-4 py-3 text-center">Acciones</th>
+            </tr>
             </thead>
-            <tbody id="users-table">
-                @foreach ($users as $user)
-                    <tr class="text-center user-row" id="row-{{ $user->id }}">
-                        <td class="border px-3 py-2" id="name-{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</td>
-                        <td class="border px-3 py-2" id="email-{{ $user->id }}">{{ $user->email }}</td>
-                        <td class="border px-3 py-2" id="role-{{ $user->id }}">{{ $user->getRoleNames()->join(', ') }}</td>
-                        <td class="border px-3 py-2" id="gender-{{ $user->id }}">{{ $user->gender->name ?? 'N/A' }}</td>
-                        <td class="border px-3 py-2" id="doctype-{{ $user->id }}">{{ $user->documentType->name ?? 'N/A' }}</td>
-                        <td class="border px-3 py-2" id="docnum-{{ $user->id }}">{{ $user->document_number }}</td>
-                        <td class="border px-3 py-2" id="usertype-{{ $user->id }}">{{ $user->userType->name ?? 'N/A' }}</td>
-                        <td class="border px-3 py-2" id="program-{{ $user->id }}">{{ $user->academicProgram->name ?? 'N/A' }}</td>
-                        <td class="border px-3 py-2" id="institution-{{ $user->id }}">{{ $user->institution->name ?? 'N/A' }}</td>
-                        <td class="border px-3 py-2" id="status-{{ $user->id }}">{{ $user->status ? 'Activo' : 'Inactivo' }}</td>
-                        <td class="border px-3 py-2" id="terms-{{ $user->id }}">{{ $user->accepted_terms ? 'Sí' : 'No' }}</td>
-                        <td class="border px-3 py-2" id="actions-{{ $user->id }}">
-                            @if (!$user->hasRole('super admin'))
-                                <button onclick="enableEdit({{ $user->id }})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded mr-2">
-                                    Editar
-                                </button>
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" onclick="return confirm('¿Estás seguro?')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            @else
-                                <span class="text-gray-500 italic">Super admin</span>
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
+            <tbody class="divide-y divide-gray-200">
+            @foreach ($users as $usuario)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
+                    <td class="px-4 py-2">{{ $usuario->email }}</td>
+                    <td class="px-4 py-2">{{ $usuario->roles->pluck('name')->implode(', ') }}</td>
+                    <td class="px-4 py-2 text-center flex gap-2 justify-center items-center">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                                onclick="editarUsuario({{ $usuario->id }})">
+                            Editar
+                        </button>
+                        <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block">
+                            @csrf
+                            @method('DELETE')
+                            <button onclick="return confirm('¿Eliminar este usuario?')"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
+                                Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            @endforeach
             </tbody>
         </table>
-    </div>
+    </section>
 
-    <script>
-        function enableEdit(id) {
-            const fields = ['name', 'email', 'role', 'gender', 'doctype', 'docnum', 'usertype', 'program', 'institution', 'status', 'terms'];
-            fields.forEach(field => {
-                const cell = document.getElementById(`${field}-${id}`);
-                if (!cell) return;
-                const value = cell.textContent.trim();
-                if (field === 'name') {
-                    const [first, ...last] = value.split(' ');
-                    cell.innerHTML = `<input id="edit-first-${id}" type="text" value="${first}" class="border p-1 w-20 rounded"> <input id="edit-last-${id}" type="text" value="${last.join(' ')}" class="border p-1 w-20 rounded">`;
-                } else if (field === 'email') {
-                    cell.innerHTML = `<input id="edit-email-${id}" type="email" value="${value}" class="border p-1 w-48 rounded">`;
-                } else {
-                    cell.innerHTML = `<input id="edit-${field}-${id}" type="text" value="${value}" class="border p-1 w-24 rounded">`;
-                }
-            });
+    {{-- Formulario de edición --}}
+    <section id="formularioEdicion" class="hidden mt-10">
+        <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
 
-            document.getElementById(`actions-${id}`).innerHTML = `
-                <button onclick="saveEdit(${id})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded mr-2">Guardar</button>
-                <button onclick="cancelEdit()" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">Cancelar</button>
-            `;
-        }
+        <form id="formEditarUsuario" method="POST">
+            @csrf
+            @method('PUT')
 
-        function cancelEdit() {
-            location.reload();
-        }
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {{-- Campos de texto --}}
+                @php
+                    $camposTexto = [
+                        'first_name' => 'Primer Nombre',
+                        'last_name' => 'Apellido',
+                        'email' => 'Correo Electrónico',
+                        'birthdate' => 'Fecha de Nacimiento',
+                        'document_number' => 'Número de Documento'
+                    ];
+                @endphp
 
-        function saveEdit(id) {
-            const first_name = document.getElementById(`edit-first-${id}`).value;
-            const last_name = document.getElementById(`edit-last-${id}`).value;
-            const email = document.getElementById(`edit-email-${id}`).value;
-            const role = document.getElementById(`edit-role-${id}`)?.value || '';
-            const gender = document.getElementById(`edit-gender-${id}`)?.value || '';
-            const document_type = document.getElementById(`edit-doctype-${id}`)?.value || '';
-            const document_number = document.getElementById(`edit-docnum-${id}`)?.value || '';
-            const user_type = document.getElementById(`edit-usertype-${id}`)?.value || '';
-            const program = document.getElementById(`edit-program-${id}`)?.value || '';
-            const institution = document.getElementById(`edit-institution-${id}`)?.value || '';
-            const status = document.getElementById(`edit-status-${id}`)?.value || '';
-            const terms = document.getElementById(`edit-terms-${id}`)?.value || '';
+                @foreach ($camposTexto as $id => $label)
+                    <div>
+                        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
+                        <input type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
+                               id="{{ $id }}" name="{{ $id }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                @endforeach
 
-            fetch(`/users/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    first_name,
-                    last_name,
-                    email,
-                    role,
-                    gender_id: gender,
-                    document_type_id: document_type,
-                    document_number,
-                    user_type_id: user_type,
-                    academic_program_id: program,
-                    institution_id: institution,
-                    status: status.toLowerCase() === 'activo',
-                    accepted_terms: terms.toLowerCase() === 'sí'
-                })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Error al guardar');
-                return response.json();
-            })
-            .then(data => {
-                alert('Usuario actualizado con éxito');
-                location.reload();
-            })
-            .catch(error => {
-                console.error(error);
-                alert('Ocurrió un error al guardar los cambios');
-            });
-        }
-    </script>
+                {{-- Selects dinámicos --}}
+                @foreach ([
+                    'gender_id' => $genders,
+                    'document_type_id' => $documentTypes,
+                    'user_type_id' => $userTypes,
+                    'academic_program_id' => $academicPrograms,
+                    'institution_id' => $institutions
+                ] as $id => $collection)
+                    <div>
+                        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
+                            {{ ucwords(str_replace('_', ' ', $id)) }}
+                        </label>
+                        <select id="{{ $id }}" name="{{ $id }}"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                onchange="{{ $id === 'user_type_id' ? 'toggleCamposEmpresa()' : '' }}">
+                            <option value="">Seleccione</option>
+                            @foreach ($collection as $item)
+                                <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endforeach
+
+                {{-- Campos de empresa --}}
+                <div id="campo_empresa" class="col-span-2 hidden">
+                    <div class="mb-4">
+                        <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+                        <input type="text" id="company_name" name="company_name"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
+                        <input type="text" id="company_address" name="company_address"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
+                    Actualizar
+                </button>
+                <button type="button" onclick="cancelarEdicion()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+    const usuarios = @json($users);
+
+    function editarUsuario(id) {
+        const user = usuarios.find(u => u.id === id);
+        if (!user) return alert('Usuario no encontrado');
+
+        // Mostrar/Ocultar secciones
+        document.getElementById('tablaUsuarios').classList.add('hidden');
+        document.getElementById('formularioEdicion').classList.remove('hidden');
+
+        // Rellenar formulario
+        const form = document.getElementById('formEditarUsuario');
+        form.action = `/usuarios/${id}`;
+        form.first_name.value = user.first_name || '';
+        form.last_name.value = user.last_name || '';
+        form.email.value = user.email || '';
+        form.birthdate.value = user.birthdate || '';
+        form.document_number.value = user.document_number || '';
+        form.company_name.value = user.company_name || '';
+        form.company_address.value = user.company_address || '';
+        form.gender_id.value = user.gender_id || '';
+        form.document_type_id.value = user.document_type_id || '';
+        form.user_type_id.value = user.user_type_id || '';
+        form.academic_program_id.value = user.academic_program_id || '';
+        form.institution_id.value = user.institution_id || '';
+
+        toggleCamposEmpresa();
+    }
+
+    function cancelarEdicion() {
+        document.getElementById('formEditarUsuario').reset();
+        document.getElementById('formularioEdicion').classList.add('hidden');
+        document.getElementById('tablaUsuarios').classList.remove('hidden');
+    }
+
+    function toggleCamposEmpresa() {
+        const tipo = document.getElementById('user_type_id').value;
+        const mostrar = tipo == 3; // ID 3 para Compañía
+        document.getElementById('campo_empresa').classList.toggle('hidden', !mostrar);
+    }
+</script>
 
 </body>
 </html>
