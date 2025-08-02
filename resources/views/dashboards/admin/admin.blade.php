@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Panel de Administración</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body class="bg-gray-100 p-6">
 
@@ -56,7 +57,6 @@
             @method('PUT')
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {{-- Campos de texto --}}
                 @php
                     $camposTexto = [
                         'first_name' => 'Primer Nombre',
@@ -80,9 +80,7 @@
                 @foreach ([
                     'gender_id' => $genders,
                     'document_type_id' => $documentTypes,
-                    'user_type_id' => $userTypes,
-                    'academic_program_id' => $academicPrograms,
-                    'institution_id' => $institutions
+                    'user_type_id' => $userTypes
                 ] as $id => $collection)
                     <div>
                         <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
@@ -90,7 +88,7 @@
                         </label>
                         <select id="{{ $id }}" name="{{ $id }}"
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                onchange="{{ $id === 'user_type_id' ? 'toggleCamposEmpresa()' : '' }}">
+                                onchange="toggleCamposEspeciales()">
                             <option value="">Seleccione</option>
                             @foreach ($collection as $item)
                                 <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
@@ -99,8 +97,31 @@
                     </div>
                 @endforeach
 
-                {{-- Campos de empresa --}}
-                <div id="campo_empresa" class="col-span-2 hidden">
+                {{-- Campos adicionales dinámicos --}}
+                <div id="academic_section" class="col-span-2 hidden">
+                    <div class="mb-4">
+                        <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
+                        <select id="academic_program_id" name="academic_program_id"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccione</option>
+                            @foreach ($academicPrograms as $program)
+                                <option value="{{ $program->id }}">{{ $program->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
+                        <select id="institution_id" name="institution_id"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccione</option>
+                            @foreach ($institutions as $inst)
+                                <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div id="empresa_section" class="col-span-2 hidden">
                     <div class="mb-4">
                         <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
                         <input type="text" id="company_name" name="company_name"
@@ -131,42 +152,115 @@
 
     function editarUsuario(id) {
         const user = usuarios.find(u => u.id === id);
-        if (!user) return alert('Usuario no encontrado');
+        if (!user) return alert('⚠️ Usuario no encontrado');
 
-        // Mostrar/Ocultar secciones
         document.getElementById('tablaUsuarios').classList.add('hidden');
         document.getElementById('formularioEdicion').classList.remove('hidden');
 
-        // Rellenar formulario
         const form = document.getElementById('formEditarUsuario');
         form.action = `/usuarios/${id}`;
-        form.first_name.value = user.first_name || '';
-        form.last_name.value = user.last_name || '';
-        form.email.value = user.email || '';
-        form.birthdate.value = user.birthdate || '';
-        form.document_number.value = user.document_number || '';
-        form.company_name.value = user.company_name || '';
-        form.company_address.value = user.company_address || '';
-        form.gender_id.value = user.gender_id || '';
-        form.document_type_id.value = user.document_type_id || '';
-        form.user_type_id.value = user.user_type_id || '';
-        form.academic_program_id.value = user.academic_program_id || '';
-        form.institution_id.value = user.institution_id || '';
 
-        toggleCamposEmpresa();
+        const fields = [
+            'first_name', 'last_name', 'email', 'birthdate',
+            'document_number', 'gender_id', 'document_type_id',
+            'user_type_id', 'academic_program_id', 'institution_id',
+            'company_name', 'company_address'
+        ];
+
+        fields.forEach(field => {
+            if (form[field]) {
+                form[field].value = user[field] ?? '';
+            }
+        });
+
+        toggleCamposEspeciales(); // Ajustar visibilidad de campos según tipo de usuario
     }
 
     function cancelarEdicion() {
-        document.getElementById('formEditarUsuario').reset();
+        const form = document.getElementById('formEditarUsuario');
+        form.reset();
+        toggleCamposEspeciales(); // Asegurar que también oculta campos al cancelar
         document.getElementById('formularioEdicion').classList.add('hidden');
         document.getElementById('tablaUsuarios').classList.remove('hidden');
     }
 
-    function toggleCamposEmpresa() {
-        const tipo = document.getElementById('user_type_id').value;
-        const mostrar = tipo == 3; // ID 3 para Compañía
-        document.getElementById('campo_empresa').classList.toggle('hidden', !mostrar);
+    function toggleCamposEspeciales() {
+        const tipo = parseInt(document.getElementById('user_type_id').value);
+        const academic = document.getElementById('academic_section');
+        const empresa = document.getElementById('empresa_section');
+
+        const esEstudiante = tipo === 4;
+        const esEmpresa = tipo === 2 || tipo === 3;
+
+        academic.classList.toggle('hidden', !esEstudiante);
+        empresa.classList.toggle('hidden', !esEmpresa);
+
+        if (!esEstudiante) {
+            document.getElementById('academic_program_id').value = '';
+            document.getElementById('institution_id').value = '';
+        }
+        if (!esEmpresa) {
+            document.getElementById('company_name').value = '';
+            document.getElementById('company_address').value = '';
+        }
     }
+
+    document.getElementById('user_type_id').addEventListener('change', toggleCamposEspeciales);
+
+    document.getElementById('formEditarUsuario').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        formData.append('_method', 'PUT');
+
+        // ✅ Forzar que el usuario acepta los términos
+        formData.set('accepted_terms', 1);
+
+        // ✅ MOSTRAR lo que se está enviando
+        console.log('📦 Datos enviados al servidor:');
+        for (let [clave, valor] of formData.entries()) {
+            console.log(`${clave}: ${valor}`);
+        }
+
+        try {
+            const response = await axios.post(form.action, formData, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            console.log('✅ Usuario actualizado correctamente:', response.data);
+            alert('✅ Usuario actualizado correctamente');
+            location.reload();
+
+        } catch (error) {
+            if (error.response) {
+                const status = error.response.status;
+
+                if (status === 422) {
+                    const errors = error.response.data.errors;
+                    console.warn('⚠️ Errores de validación:', errors);
+
+                    let mensaje = 'Corrige los siguientes errores:\n';
+                    for (const campo in errors) {
+                        mensaje += `- ${errors[campo].join(', ')}\n`;
+                    }
+                    alert(mensaje);
+
+                } else {
+                    console.error(`❌ Error ${status}:`, error.response.data);
+                    alert(`❌ Error del servidor (código ${status})\n${error.response.data.message}`);
+                }
+
+            } else if (error.request) {
+                console.error('❌ No se recibió respuesta del servidor:', error.request);
+                alert('❌ No se recibió respuesta del servidor.');
+
+            } else {
+                console.error('❌ Error inesperado:', error.message);
+                alert('❌ Error inesperado al enviar la solicitud.');
+            }
+        }
+    });
 </script>
 
 </body>
