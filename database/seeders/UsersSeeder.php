@@ -20,7 +20,7 @@ class UsersSeeder extends Seeder
                 'last_name' => 'Parada',
                 'email' => 'manuel.parada@comfanorte.edu.co',
                 'password' => Hash::make('Password123'),
-                'birthdate' => Carbon::create(1985, 7, 15),
+                'birthdate' => Carbon::createFromFormat('d/m/Y', '15/07/1985'),
                 'gender_id' => 1,
                 'document_type_id' => 1,
                 'user_type_id' => 1,
@@ -37,7 +37,7 @@ class UsersSeeder extends Seeder
                 'last_name' => 'Sebastián',
                 'email' => 'erick.sebastian@comfanorte.edu.co',
                 'password' => Hash::make('Password123'),
-                'birthdate' => Carbon::create(1992, 3, 22),
+                'birthdate' => Carbon::createFromFormat('d/m/Y', '22/03/1992'),
                 'gender_id' => 1,
                 'document_type_id' => 1,
                 'user_type_id' => 4,
@@ -56,7 +56,7 @@ class UsersSeeder extends Seeder
                 'last_name' => 'Cano',
                 'email' => 'nelly.cano@comfanorte.edu.co',
                 'password' => Hash::make('Password123'),
-                'birthdate' => Carbon::create(1990, 11, 5),
+                'birthdate' => Carbon::createFromFormat('d/m/Y', '05/11/1990'),
                 'gender_id' => 1,
                 'document_type_id' => 1,
                 'user_type_id' => 4,
@@ -75,7 +75,7 @@ class UsersSeeder extends Seeder
                 'last_name' => 'Rueda',
                 'email' => 'santiago.rueda@comfanorte.edu.co',
                 'password' => Hash::make('Password123'),
-                'birthdate' => Carbon::create(1988, 9, 30),
+                'birthdate' => Carbon::createFromFormat('d/m/Y', '30/09/1988'),
                 'gender_id' => 1,
                 'document_type_id' => 1,
                 'user_type_id' => 4,
@@ -91,7 +91,7 @@ class UsersSeeder extends Seeder
 
         foreach ($users as $userData) {
             $role = $userData['role'];
-            unset($userData['role']); // eliminar para evitar error de columna no existente
+            unset($userData['role']);
             $user = User::create($userData);
             $user->assignRole($role);
         }

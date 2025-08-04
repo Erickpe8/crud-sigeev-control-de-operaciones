@@ -12,6 +12,7 @@ use App\Models\AcademicProgram;
 use App\Models\Institution;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -64,39 +65,57 @@ public function update(Request $request, User $user)
             : abort(403, 'No puedes editar al Super Admin.');
     }
 
+    $input = $request->all();
+
+    $rules = [
+        'first_name' => 'required|string|max:100',
+        'last_name' => 'required|string|max:100',
+        'gender_id' => 'nullable|exists:genders,id',
+        'document_type_id' => 'nullable|exists:document_types,id',
+        'user_type_id' => 'nullable|exists:user_types,id',
+        'academic_program_id' => 'nullable|exists:academic_programs,id',
+        'institution_id' => 'nullable|exists:institutions,id',
+        'document_number' => 'nullable|string|max:50',
+        'company_name' => 'nullable|string|max:255',
+        'company_address' => 'nullable|string|max:255',
+        'birthdate' => 'nullable|string', // no usar date aquí si se envía en otro formato
+        'status' => 'nullable|boolean',
+        'accepted_terms' => 'nullable|boolean',
+    ];
+
+    if ($request->email !== $user->getOriginal('email')) {
+        $rules['email'] = [
+            'required',
+            'email',
+            Rule::unique('users', 'email')->ignore($user->id),
+        ];
+    } else {
+        $rules['email'] = 'required|email';
+    }
+
+    $validatedData = $request->validate($rules);
+
     try {
-        // Validar campos
-        $validatedData = $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => [
-                'required',
-                'email',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
-            'gender_id' => 'nullable|exists:genders,id',
-            'document_type_id' => 'nullable|exists:document_types,id',
-            'user_type_id' => 'nullable|exists:user_types,id',
-            'academic_program_id' => 'nullable|exists:academic_programs,id',
-            'institution_id' => 'nullable|exists:institutions,id',
-            'document_number' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'company_address' => 'nullable|string|max:255',
-            'birthdate' => 'nullable|date',
-            'status' => 'nullable|boolean',
-            'accepted_terms' => 'nullable|boolean',
-        ]);
+        $user->fill(collect($validatedData)->except(['password', 'birthdate'])->toArray());
 
-        // Asignación en bloque segura (sin password)
-        $user->fill(collect($validatedData)->except(['password'])->toArray());
+        // Convertir fecha si viene en formato dd/mm/yyyy
+        if (!empty($validatedData['birthdate'])) {
+            try {
+                $birth = Carbon::createFromFormat('d/m/Y', $validatedData['birthdate']);
+                $user->birthdate = $birth->format('Y-m-d');
+            } catch (\Exception $e) {
+                // fallback si ya viene en formato correcto
+                $user->birthdate = Carbon::parse($validatedData['birthdate'])->format('Y-m-d');
+            }
+        } else {
+            $user->birthdate = null;
+        }
 
-        // Defaults para campos opcionales si vienen vacíos
         $user->academic_program_id = $validatedData['academic_program_id'] ?? null;
         $user->institution_id = $validatedData['institution_id'] ?? null;
         $user->document_number = $validatedData['document_number'] ?? null;
         $user->company_name = $validatedData['company_name'] ?? null;
         $user->company_address = $validatedData['company_address'] ?? null;
-        $user->birthdate = $validatedData['birthdate'] ?? null;
         $user->status = $validatedData['status'] ?? true;
         $user->accepted_terms = $validatedData['accepted_terms'] ?? false;
 
@@ -125,7 +144,6 @@ public function update(Request $request, User $user)
     }
 }
 
-
     public function destroy(User $user)
     {
         if ($user->hasRole('super admin')) {
@@ -136,4 +154,5 @@ public function update(Request $request, User $user)
 
         return back()->with('success', 'Usuario eliminado correctamente.');
     }
+
 }

@@ -70,9 +70,13 @@
                 @foreach ($camposTexto as $id => $label)
                     <div>
                         <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
-                        <input type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
-                               id="{{ $id }}" name="{{ $id }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <input
+                            type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
+                            id="{{ $id }}"
+                            name="{{ $id }}"
+                            value=""
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
                     </div>
                 @endforeach
 
@@ -169,17 +173,21 @@
 
         fields.forEach(field => {
             if (form[field]) {
-                form[field].value = user[field] ?? '';
+                let value = user[field] ?? '';
+                if (field === 'birthdate' && value) {
+                    value = new Date(value).toISOString().split('T')[0];
+                }
+                form[field].value = value;
             }
         });
 
-        toggleCamposEspeciales(); // Ajustar visibilidad de campos según tipo de usuario
+        toggleCamposEspeciales();
     }
 
     function cancelarEdicion() {
         const form = document.getElementById('formEditarUsuario');
         form.reset();
-        toggleCamposEspeciales(); // Asegurar que también oculta campos al cancelar
+        toggleCamposEspeciales();
         document.getElementById('formularioEdicion').classList.add('hidden');
         document.getElementById('tablaUsuarios').classList.remove('hidden');
     }
@@ -213,11 +221,8 @@
         const form = e.target;
         const formData = new FormData(form);
         formData.append('_method', 'PUT');
-
-        // ✅ Forzar que el usuario acepta los términos
         formData.set('accepted_terms', 1);
 
-        // ✅ MOSTRAR lo que se está enviando
         console.log('📦 Datos enviados al servidor:');
         for (let [clave, valor] of formData.entries()) {
             console.log(`${clave}: ${valor}`);
@@ -228,35 +233,23 @@
                 headers: { 'Accept': 'application/json' }
             });
 
-            console.log('✅ Usuario actualizado correctamente:', response.data);
             alert('✅ Usuario actualizado correctamente');
             location.reload();
 
         } catch (error) {
             if (error.response) {
                 const status = error.response.status;
-
                 if (status === 422) {
                     const errors = error.response.data.errors;
-                    console.warn('⚠️ Errores de validación:', errors);
-
                     let mensaje = 'Corrige los siguientes errores:\n';
                     for (const campo in errors) {
                         mensaje += `- ${errors[campo].join(', ')}\n`;
                     }
                     alert(mensaje);
-
                 } else {
-                    console.error(`❌ Error ${status}:`, error.response.data);
                     alert(`❌ Error del servidor (código ${status})\n${error.response.data.message}`);
                 }
-
-            } else if (error.request) {
-                console.error('❌ No se recibió respuesta del servidor:', error.request);
-                alert('❌ No se recibió respuesta del servidor.');
-
             } else {
-                console.error('❌ Error inesperado:', error.message);
                 alert('❌ Error inesperado al enviar la solicitud.');
             }
         }
