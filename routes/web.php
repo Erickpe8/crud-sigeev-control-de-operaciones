@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Dashboard\SuperAdminController;
-use App\Http\Controllers\Dashboard\AdminController;
-use App\Http\Controllers\Dashboard\UserController;
+use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\web\Dashboard\SuperAdminController;
+use App\Http\Controllers\web\Dashboard\AdminController;
+use App\Http\Controllers\web\Dashboard\UserController;
 
 /*
 |--------------------------------------------------------------------------

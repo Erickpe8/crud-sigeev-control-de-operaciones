@@ -11,6 +11,14 @@
 <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
     <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios</h1>
 
+    {{-- Botón para registrar nuevo usuario --}}
+        <div class="mb-6 text-right">
+            <a href="{{ route('admin.usuarios.crear') }}"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">
+                Registrar Un Nuevo Usuario
+            </a>
+        </div>
+
     {{-- Tabla de usuarios --}}
     <section id="tablaUsuarios">
         <table class="min-w-full table-auto text-sm text-left border-collapse border">
