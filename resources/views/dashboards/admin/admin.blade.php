@@ -11,13 +11,37 @@
 <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
     <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios</h1>
 
-    {{-- Botón para registrar nuevo usuario --}}
-        <div class="mb-6 text-right">
+    {{-- Buscador + Registrar + Logout --}}
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <!-- Buscador -->
+        <div class="flex-1">
+            <input
+                type="text"
+                id="buscadorUsuarios"
+                placeholder="Buscar por nombre o correo..."
+                class="w-full px-4 py-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+        </div>
+
+        <!-- Botón Registrar -->
+        <div>
             <a href="{{ route('admin.usuarios.crear') }}"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
                 Registrar Un Nuevo Usuario
             </a>
         </div>
+
+        <!-- Botón Cerrar sesión -->
+        <div>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow block text-center">
+                    Cerrar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
 
     {{-- Tabla de usuarios --}}
     <section id="tablaUsuarios">
@@ -30,9 +54,9 @@
                 <th class="px-4 py-3 text-center">Acciones</th>
             </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody class="divide-y divide-gray-200" id="tablaCuerpoUsuarios">
             @foreach ($users as $usuario)
-                <tr class="hover:bg-gray-50 transition">
+                <tr class="hover:bg-gray-50 transition fila-usuario">
                     <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
                     <td class="px-4 py-2">{{ $usuario->email }}</td>
                     <td class="px-4 py-2">{{ $usuario->roles->pluck('name')->implode(', ') }}</td>
@@ -149,7 +173,7 @@
 
             <div class="flex gap-4">
                 <button type="submit" id="btnActualizar" disabled
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
+                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
                     Actualizar
                 </button>
 
@@ -163,6 +187,16 @@
 
 <script>
     const usuarios = @json($users);
+    const form = document.getElementById('formEditarUsuario');
+    const btnActualizar = document.getElementById('btnActualizar');
+
+    const camposRequeridos = [
+        'first_name', 'last_name', 'email', 'birthdate',
+        'document_number', 'gender_id', 'document_type_id', 'user_type_id'
+    ];
+
+    const camposEstudiante = ['academic_program_id', 'institution_id'];
+    const camposEmpresa = ['company_name', 'company_address'];
 
     function editarUsuario(id) {
         const user = usuarios.find(u => u.id === id);
@@ -171,15 +205,7 @@
         document.getElementById('tablaUsuarios').classList.add('hidden');
         document.getElementById('formularioEdicion').classList.remove('hidden');
 
-        const form = document.getElementById('formEditarUsuario');
-        form.action = `/usuarios/${id}`;
-
-        const fields = [
-            'first_name', 'last_name', 'email', 'birthdate',
-            'document_number', 'gender_id', 'document_type_id',
-            'user_type_id', 'academic_program_id', 'institution_id',
-            'company_name', 'company_address'
-        ];
+        const fields = [...camposRequeridos, ...camposEstudiante, ...camposEmpresa];
 
         fields.forEach(field => {
             if (form[field]) {
@@ -192,89 +218,36 @@
         });
 
         toggleCamposEspeciales();
-        validarFormulario(); // Validar tras cargar datos
+        validarFormulario();
     }
 
     function cancelarEdicion() {
-        const form = document.getElementById('formEditarUsuario');
         form.reset();
         toggleCamposEspeciales();
-        validarFormulario(); // Desactiva botón al resetear
+        validarFormulario();
         document.getElementById('formularioEdicion').classList.add('hidden');
         document.getElementById('tablaUsuarios').classList.remove('hidden');
     }
 
     function toggleCamposEspeciales() {
-        const tipo = parseInt(document.getElementById('user_type_id').value);
+        const tipo = parseInt(form['user_type_id'].value);
         const academic = document.getElementById('academic_section');
         const empresa = document.getElementById('empresa_section');
 
-        const esEstudiante = tipo === 4;
-        const esEmpresa = tipo === 2 || tipo === 3;
+        academic.classList.toggle('hidden', tipo !== 4);
+        empresa.classList.toggle('hidden', !(tipo === 2 || tipo === 3));
 
-        academic.classList.toggle('hidden', !esEstudiante);
-        empresa.classList.toggle('hidden', !esEmpresa);
-
-        if (!esEstudiante) {
-            document.getElementById('academic_program_id').value = '';
-            document.getElementById('institution_id').value = '';
+        if (tipo !== 4) {
+            form['academic_program_id'].value = '';
+            form['institution_id'].value = '';
         }
-        if (!esEmpresa) {
-            document.getElementById('company_name').value = '';
-            document.getElementById('company_address').value = '';
+        if (!(tipo === 2 || tipo === 3)) {
+            form['company_name'].value = '';
+            form['company_address'].value = '';
         }
 
-        validarFormulario(); // Revalidar cuando cambie el tipo
+        validarFormulario();
     }
-
-    document.getElementById('user_type_id').addEventListener('change', toggleCamposEspeciales);
-
-    document.getElementById('formEditarUsuario').addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const form = e.target;
-        const formData = new FormData(form);
-        formData.append('_method', 'PUT');
-        formData.set('accepted_terms', 1);
-
-        try {
-            const response = await axios.post(form.action, formData, {
-                headers: { 'Accept': 'application/json' }
-            });
-
-            alert('✅ Usuario actualizado correctamente');
-            location.reload();
-
-        } catch (error) {
-            if (error.response) {
-                const status = error.response.status;
-                if (status === 422) {
-                    const errors = error.response.data.errors;
-                    let mensaje = 'Corrige los siguientes errores:\n';
-                    for (const campo in errors) {
-                        mensaje += `- ${errors[campo].join(', ')}\n`;
-                    }
-                    alert(mensaje);
-                } else {
-                    alert(`❌ Error del servidor (código ${status})\n${error.response.data.message}`);
-                }
-            } else {
-                alert('❌ Error inesperado al enviar la solicitud.');
-            }
-        }
-    });
-
-    // 👉 Validación dinámica para habilitar el botón
-    const btnActualizar = document.getElementById('btnActualizar');
-    const form = document.getElementById('formEditarUsuario');
-
-    const camposRequeridos = [
-        'first_name', 'last_name', 'email', 'birthdate',
-        'document_number', 'gender_id', 'document_type_id', 'user_type_id'
-    ];
-
-    const camposEstudiante = ['academic_program_id', 'institution_id'];
-    const camposEmpresa = ['company_name', 'company_address'];
 
     function validarFormulario() {
         let esValido = true;
@@ -316,7 +289,48 @@
         el.addEventListener('change', validarFormulario);
     });
 
-    // Validar al cargar la página
+    document.getElementById('user_type_id').addEventListener('change', toggleCamposEspeciales);
+
+    document.getElementById('buscadorUsuarios').addEventListener('input', function () {
+        const filtro = this.value.toLowerCase();
+        const filas = document.querySelectorAll('.fila-usuario');
+
+        filas.forEach(fila => {
+            const texto = fila.textContent.toLowerCase();
+            fila.style.display = texto.includes(filtro) ? '' : 'none';
+        });
+    });
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        formData.append('_method', 'PUT');
+        formData.set('accepted_terms', 1);
+
+        try {
+            const response = await axios.post(form.action, formData, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            alert('✅ Usuario actualizado correctamente');
+            location.reload();
+
+        } catch (error) {
+            if (error.response && error.response.status === 422) {
+                const errors = error.response.data.errors;
+                let mensaje = 'Corrige los siguientes errores:\n';
+                for (const campo in errors) {
+                    mensaje += `- ${errors[campo].join(', ')}\n`;
+                }
+                alert(mensaje);
+            } else {
+                alert('❌ Error al actualizar el usuario.');
+            }
+        }
+    });
+
+    // Ejecutar validación al cargar la vista
     validarFormulario();
 </script>
 
