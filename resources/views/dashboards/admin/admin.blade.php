@@ -148,9 +148,11 @@
             </div>
 
             <div class="flex gap-4">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
+                <button type="submit" id="btnActualizar" disabled
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
                     Actualizar
                 </button>
+
                 <button type="button" onclick="cancelarEdicion()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
                     Cancelar
                 </button>
@@ -190,12 +192,14 @@
         });
 
         toggleCamposEspeciales();
+        validarFormulario(); // Validar tras cargar datos
     }
 
     function cancelarEdicion() {
         const form = document.getElementById('formEditarUsuario');
         form.reset();
         toggleCamposEspeciales();
+        validarFormulario(); // Desactiva botón al resetear
         document.getElementById('formularioEdicion').classList.add('hidden');
         document.getElementById('tablaUsuarios').classList.remove('hidden');
     }
@@ -219,6 +223,8 @@
             document.getElementById('company_name').value = '';
             document.getElementById('company_address').value = '';
         }
+
+        validarFormulario(); // Revalidar cuando cambie el tipo
     }
 
     document.getElementById('user_type_id').addEventListener('change', toggleCamposEspeciales);
@@ -230,11 +236,6 @@
         const formData = new FormData(form);
         formData.append('_method', 'PUT');
         formData.set('accepted_terms', 1);
-
-        console.log('📦 Datos enviados al servidor:');
-        for (let [clave, valor] of formData.entries()) {
-            console.log(`${clave}: ${valor}`);
-        }
 
         try {
             const response = await axios.post(form.action, formData, {
@@ -262,6 +263,61 @@
             }
         }
     });
+
+    // 👉 Validación dinámica para habilitar el botón
+    const btnActualizar = document.getElementById('btnActualizar');
+    const form = document.getElementById('formEditarUsuario');
+
+    const camposRequeridos = [
+        'first_name', 'last_name', 'email', 'birthdate',
+        'document_number', 'gender_id', 'document_type_id', 'user_type_id'
+    ];
+
+    const camposEstudiante = ['academic_program_id', 'institution_id'];
+    const camposEmpresa = ['company_name', 'company_address'];
+
+    function validarFormulario() {
+        let esValido = true;
+
+        camposRequeridos.forEach(id => {
+            const el = form[id];
+            if (!el || el.value.trim() === '') {
+                esValido = false;
+            }
+        });
+
+        const tipo = parseInt(form['user_type_id'].value);
+
+        if (tipo === 4) {
+            camposEstudiante.forEach(id => {
+                const el = form[id];
+                if (!el || el.value.trim() === '') {
+                    esValido = false;
+                }
+            });
+        }
+
+        if (tipo === 2 || tipo === 3) {
+            camposEmpresa.forEach(id => {
+                const el = form[id];
+                if (!el || el.value.trim() === '') {
+                    esValido = false;
+                }
+            });
+        }
+
+        btnActualizar.disabled = !esValido;
+        btnActualizar.classList.toggle('opacity-50', !esValido);
+        btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
+    }
+
+    form.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', validarFormulario);
+        el.addEventListener('change', validarFormulario);
+    });
+
+    // Validar al cargar la página
+    validarFormulario();
 </script>
 
 </body>

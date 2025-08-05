@@ -17,7 +17,9 @@ use App\Http\Controllers\Controller;
 
 class AdminCreateUserController extends Controller
 {
-    // Mostrar el formulario de creación
+    /**
+     * Mostrar el formulario de creación de usuarios
+     */
     public function create()
     {
         return view('auth.createusers', [
@@ -29,7 +31,9 @@ class AdminCreateUserController extends Controller
         ]);
     }
 
-    // Guardar el usuario creado por el admin
+    /**
+     * Guardar el usuario creado por el administrador
+     */
     public function store(Request $request)
     {
         $data = $this->validateData($request);
@@ -53,13 +57,18 @@ class AdminCreateUserController extends Controller
             'password'            => Hash::make($data['password']),
         ]);
 
+        // ✅ Asignar rol por defecto: "user"
+        $user->assignRole('user');
+
         return response()->json([
             'message' => 'Usuario creado exitosamente por el administrador.',
             'user'    => $user,
         ], 201);
     }
 
-    // Validaciones
+    /**
+     * Validaciones del formulario
+     */
     protected function validateData(Request $request): array
     {
         $rules = [
