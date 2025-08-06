@@ -8,38 +8,49 @@
 </head>
 <body class="bg-gray-100 p-6">
 
-<div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
+<div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
     <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios</h1>
 
-    {{-- Buscador + Registrar + Logout --}}
-    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <!-- Buscador -->
-        <div class="flex-1">
-            <input
-                type="text"
-                id="buscadorUsuarios"
-                placeholder="Buscar por nombre o correo..."
-                class="w-full px-4 py-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-        </div>
+    <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded">
+        <p class="text-gray-700 leading-relaxed">
+            Bienvenido, Administrador. Desde este panel tienes acceso completo para visualizar, editar, registrar y eliminar usuarios dentro del sistema, con excepción de los usuarios con rol <strong>Superadministrador</strong>, cuya gestión está reservada por razones de seguridad.
+            <br><br>
+            Asegúrate de verificar cuidadosamente la información antes de aplicar cambios, ya que estos pueden afectar el acceso y los permisos de los usuarios.
+            <br><br>
+            Si necesitas realizar acciones avanzadas, como la gestión de roles especiales o restaurar cuentas eliminadas, por favor comunícate con el equipo de soporte técnico a través de los canales oficiales.
+        </p>
+        <br><br>
 
-        <!-- Botón Registrar -->
-        <div>
-            <a href="{{ route('admin.usuarios.crear') }}"
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
-                Registrar Un Nuevo Usuario
-            </a>
-        </div>
+        {{-- Buscador + Registrar + Logout --}}
+        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <!-- Buscador -->
+            <div class="flex-1">
+                <input
+                    type="text"
+                    id="buscadorUsuarios"
+                    placeholder="Buscar por nombre o correo..."
+                    class="w-full px-4 py-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+            </div>
 
-        <!-- Botón Cerrar sesión -->
-        <div>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow block text-center">
-                    Cerrar Sesión
-                </button>
-            </form>
+            <!-- Botón Registrar -->
+            <div>
+                <a href="{{ route('admin.usuarios.crear') }}"
+                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
+                    Registrar Un Nuevo Usuario
+                </a>
+            </div>
+
+            <!-- Botón Cerrar sesión -->
+            <div>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit"
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow block text-center">
+                        Cerrar Sesión
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -78,6 +89,9 @@
             @endforeach
             </tbody>
         </table>
+        <div class="mt-6 flex justify-center">
+            {{ $users->links('pagination::tailwind') }}
+        </div>
     </section>
 
     {{-- Formulario de edición --}}
@@ -112,7 +126,6 @@
                     </div>
                 @endforeach
 
-                {{-- Selects dinámicos --}}
                 @foreach ([
                     'gender_id' => $genders,
                     'document_type_id' => $documentTypes,
@@ -190,11 +203,7 @@
     const form = document.getElementById('formEditarUsuario');
     const btnActualizar = document.getElementById('btnActualizar');
 
-    const camposRequeridos = [
-        'first_name', 'last_name', 'email', 'birthdate',
-        'document_number', 'gender_id', 'document_type_id', 'user_type_id'
-    ];
-
+    const camposRequeridos = ['first_name', 'last_name', 'email', 'birthdate', 'document_number', 'gender_id', 'document_type_id', 'user_type_id'];
     const camposEstudiante = ['academic_program_id', 'institution_id'];
     const camposEmpresa = ['company_name', 'company_address'];
 
@@ -204,9 +213,11 @@
 
         document.getElementById('tablaUsuarios').classList.add('hidden');
         document.getElementById('formularioEdicion').classList.remove('hidden');
+        document.getElementById('mensajeBienvenida')?.classList.add('hidden');
+
+        form.action = `/usuarios/${id}`;
 
         const fields = [...camposRequeridos, ...camposEstudiante, ...camposEmpresa];
-
         fields.forEach(field => {
             if (form[field]) {
                 let value = user[field] ?? '';
@@ -227,6 +238,7 @@
         validarFormulario();
         document.getElementById('formularioEdicion').classList.add('hidden');
         document.getElementById('tablaUsuarios').classList.remove('hidden');
+        document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
     }
 
     function toggleCamposEspeciales() {
@@ -294,7 +306,6 @@
     document.getElementById('buscadorUsuarios').addEventListener('input', function () {
         const filtro = this.value.toLowerCase();
         const filas = document.querySelectorAll('.fila-usuario');
-
         filas.forEach(fila => {
             const texto = fila.textContent.toLowerCase();
             fila.style.display = texto.includes(filtro) ? '' : 'none';
@@ -330,7 +341,6 @@
         }
     });
 
-    // Ejecutar validación al cargar la vista
     validarFormulario();
 </script>
 

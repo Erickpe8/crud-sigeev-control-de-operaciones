@@ -18,7 +18,7 @@ class AdminController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->get();
+        $users = User::with('roles')->paginate(50); // Cantidad usuarios por página
         $genders = Gender::all();
         $documentTypes = DocumentType::all();
         $userTypes = UserType::all();
