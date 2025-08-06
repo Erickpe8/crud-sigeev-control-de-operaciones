@@ -6,165 +6,217 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
-<body class="bg-gray-100 py-8">
-<div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-8">
-    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Registrar Nuevo Usuario</h2>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-    <form id="adminCreateForm" class="grid gap-6">
+<form id="adminCreateForm" class="w-[720px] bg-white rounded-lg shadow-lg p-6 relative">
+    <!-- Cabecera decorativa -->
+    <div class="relative h-6 bg-[#ff0000] rounded-t-lg">
+        <svg class="absolute top-full left-0 w-full" viewBox="0 0 1440 100" preserveAspectRatio="none">
+            <path fill="#ffffff" d="M0,0 C480,100 960,0 1440,100 L1440,0 L0,0 Z"></path>
+        </svg>
+    </div>
 
-        <!-- Datos personales -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <label>Nombres</label>
-                <input type="text" id="first_name" class="w-full border rounded px-3 py-2">
-            </div>
-            <div>
-                <label>Apellidos</label>
-                <input type="text" id="last_name" class="w-full border rounded px-3 py-2">
-            </div>
-            <div>
-                <label>Correo Electrónico</label>
-                <input type="email" id="email" class="w-full border rounded px-3 py-2">
-            </div>
+    <h2 class="text-2xl font-bold mt-6 mb-4 text-center text-gray-800">Registrar Nuevo Usuario</h2>
+
+    <!-- Datos personales -->
+    <div class="grid gap-4 mb-6 md:grid-cols-2">
+        <div>
+            <label for="first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombres</label>
+            <input type="text" id="first_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Nombres">
         </div>
-
-        <!-- Documento y tipo -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <label>Tipo de Usuario</label>
-                <select id="user_type_id" class="w-full border rounded px-3 py-2 bg-white text-gray-900" onchange="toggleCamposEspeciales()">
-                    <option value="">Selecciona</option>
-                    @foreach ($userTypes as $type)
-                        <option value="{{ $type->id }}">{{ $type->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label>Tipo de Documento</label>
-                <select id="document_type_id" class="w-full border rounded px-3 py-2 bg-white text-gray-900">
-                    <option value="">Selecciona</option>
-                    @foreach ($documentTypes as $doc)
-                        <option value="{{ $doc->id }}">{{ $doc->type }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label>Número de Documento</label>
-                <input type="text" id="document_number" class="w-full border rounded px-3 py-2">
-            </div>
+        <div>
+            <label for="last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos</label>
+            <input type="text" id="last_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Apellidos">
         </div>
-
-        <!-- Datos adicionales -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <label>Sexo</label>
-                <select id="gender_id" class="w-full border rounded px-3 py-2 bg-white text-gray-900">
-                    <option value="">Selecciona</option>
-                    @foreach ($genders as $gender)
-                        <option value="{{ $gender->id }}">{{ $gender->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label>Teléfono</label>
-                <input type="text" id="phone" class="w-full border rounded px-3 py-2">
-            </div>
-            <div>
-                <label>Fecha de Nacimiento</label>
-                <input type="date" id="birthdate" class="w-full border rounded px-3 py-2">
-            </div>
+        <div class="md:col-span-2">
+            <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo Electrónico</label>
+            <input type="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="ejemplo@correo.com">
         </div>
+    </div>
 
-        <!-- Contraseña -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <label>Contraseña</label>
-                <input type="password" id="password" class="w-full border rounded px-3 py-2">
-            </div>
+    <!-- Documento y tipo -->
+    <div class="grid gap-4 mb-6 md:grid-cols-3">
+        <div>
+            <label for="user_type_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Usuario</label>
+            <select id="user_type_id" onchange="toggleCamposEspeciales()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">Selecciona</option>
+                @foreach ($userTypes as $type)
+                    <option value="{{ $type->id }}">{{ $type->type }}</option>
+                @endforeach
+            </select>
         </div>
-
-        <!-- Campos académicos -->
-        <div id="academic_section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden">
-            <div>
-                <label>Programa Académico</label>
-                <select id="academic_program_id" class="w-full border rounded px-3 py-2 bg-white text-gray-900">
-                    <option value="">Selecciona</option>
-                    @foreach ($academicPrograms as $program)
-                        <option value="{{ $program->id }}">{{ $program->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label>Institución</label>
-                <select id="institution_id" class="w-full border rounded px-3 py-2 bg-white text-gray-900">
-                    <option value="">Selecciona</option>
-                    @foreach ($institutions as $inst)
-                        <option value="{{ $inst->id }}">{{ $inst->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <div>
+            <label for="document_type_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Documento</label>
+            <select id="document_type_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">Selecciona</option>
+                @foreach ($documentTypes as $doc)
+                    <option value="{{ $doc->id }}">{{ $doc->name }}</option>
+                @endforeach
+            </select>
         </div>
-
-        <!-- Campos empresariales -->
-        <div id="empresa_section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden">
-            <div>
-                <label>Nombre de la Empresa</label>
-                <input type="text" id="company_name" class="w-full border rounded px-3 py-2">
-            </div>
-            <div>
-                <label>Dirección de la Empresa</label>
-                <input type="text" id="company_address" class="w-full border rounded px-3 py-2">
-            </div>
+        <div>
+            <label for="document_number" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Documento</label>
+            <input type="text" id="document_number" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="1234567890">
         </div>
+    </div>
 
-        <!-- Botones -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button type="button" id="btnCrear" disabled
-                onclick="crearUsuario()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded w-full opacity-50 cursor-not-allowed">
-                Crear Usuario
-            </button>
-            <a href="{{ url('/dashboard/admin') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded w-full text-center">
-                Cancelar
-            </a>
+    <!-- Campos adicionales -->
+    <div class="grid gap-4 mb-6 md:grid-cols-3">
+        <div>
+            <label for="gender_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sexo</label>
+            <select id="gender_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">Selecciona</option>
+                @foreach ($genders as $gender)
+                    <option value="{{ $gender->id }}">{{ $gender->name }}</option>
+                @endforeach
+            </select>
         </div>
+        <div>
+            <label for="phone" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
+            <input type="text" id="phone" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="3101234567">
+        </div>
+        <div>
+            <label for="birthdate" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Nacimiento</label>
+            <input type="date" id="birthdate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+    </div>
+    <!-- Campos académicos -->
+    <div id="academic_section" class="grid gap-4 mb-6 md:grid-cols-2 hidden">
+        <div>
+            <label for="academic_program_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Programa Académico</label>
+            <select id="academic_program_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">Selecciona</option>
+                @foreach ($academicPrograms as $program)
+                    <option value="{{ $program->id }}">{{ $program->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="institution_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Institución</label>
+            <select id="institution_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">Selecciona</option>
+                @foreach ($institutions as $inst)
+                    <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
 
-        <div id="errores-validacion" class="space-y-2 mt-2 text-red-600 text-sm col-span-full"></div>
-    </form>
-</div>
+    <!-- Campos empresariales -->
+    <div id="empresa_section" class="grid gap-4 mb-6 md:grid-cols-2 hidden">
+        <div>
+            <label for="company_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre de la Empresa</label>
+            <input type="text" id="company_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        <div>
+            <label for="company_address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección de la Empresa</label>
+            <input type="text" id="company_address" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+    </div>
 
+    <!-- Contraseñas -->
+    <div class="grid gap-4 mb-6 md:grid-cols-2">
+        <div class="relative">
+            <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña</label>
+            <input type="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+            <button type="button" onclick="togglePassword('password', this)" class="absolute right-3 top-9 text-gray-500">👁</button>
+        </div>
+        <div class="relative">
+            <label for="password_confirmation" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirmar Contraseña</label>
+            <input type="password" id="password_confirmation" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 dark:bg-gray-700
+            dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+            <button type="button" onclick="togglePassword('password_confirmation', this)" class="absolute right-3 top-9 text-gray-500">👁</button>
+        </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-4 mt-6">
+        <button type="button" id="btnCrear" disabled onclick="crearUsuario()" class="flex items-center justify-center gap-2 bg-[#ff0000] text-white px-6 py-2 rounded w-full opacity-50 cursor-not-allowed">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5 13l4 4L19 7" />
+            </svg>
+            Crear Usuario
+        </button>
+        <a href="{{ url('/dashboard/admin') }}" class="flex items-center justify-center gap-2 bg-gray-600 text-white px-6 py-2 rounded w-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Cancelar
+        </a>
+    </div>
+
+    <!-- Pie decorativo -->
+    <div class="relative h-6 mt-6 bg-[#ff0000] rounded-b-lg">
+        <svg class="absolute top-0 left-0 w-full" viewBox="0 0 1440 100" preserveAspectRatio="none">
+            <path fill="#ffffff" d="M0,100 C480,0 960,100 1440,0 L1440,100 L0,100 Z"></path>
+        </svg>
+    </div>
+
+    <!-- Errores -->
+    <div id="errores-validacion" class="space-y-2 my-4 text-red-600 text-sm"></div>
+</form>
+
+<!-- Scripts -->
 <script>
+    function togglePassword(id, btn) {
+        const input = document.getElementById(id);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.textContent = input.type === 'password' ? '👁' : '🙈';
+    }
+
     function toggleCamposEspeciales() {
         const tipo = parseInt(document.getElementById('user_type_id').value);
-        document.getElementById('academic_section').classList.toggle('hidden', tipo !== 4);
-        document.getElementById('empresa_section').classList.toggle('hidden', !(tipo === 2 || tipo === 3));
+        document.getElementById('academic_section').classList.toggle('hidden', tipo === 4 ? false : true);
+        document.getElementById('empresa_section').classList.toggle('hidden', tipo === 2 || tipo === 3 ? false : true);
     }
 
     function validarFormulario() {
-        const requiredFields = [
+        const campos = [
             'first_name', 'last_name', 'email', 'user_type_id',
             'document_type_id', 'document_number', 'gender_id',
             'phone', 'birthdate', 'password'
         ];
-
-        const isValid = requiredFields.every(id => {
+        const esValido = campos.every(id => {
             const el = document.getElementById(id);
             return el && el.value.trim() !== '';
         });
-
         const btn = document.getElementById('btnCrear');
-        if (isValid) {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-        } else {
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
+        btn.disabled = !esValido;
+        btn.classList.toggle('opacity-50', !esValido);
+        btn.classList.toggle('cursor-not-allowed', !esValido);
     }
 
-    const crearUsuario = async () => {
+    async function crearUsuario() {
         document.getElementById('errores-validacion').innerHTML = '';
-
         const data = {
             first_name: document.getElementById('first_name').value,
             last_name: document.getElementById('last_name').value,
@@ -189,8 +241,7 @@
                 headers: { 'Accept': 'application/json' },
                 withCredentials: true
             });
-
-            const continuar = confirm("\u2705 Usuario creado correctamente.\n\n¿Deseas crear otro usuario?");
+            const continuar = confirm("✅ Usuario creado correctamente.\n\n¿Deseas crear otro?");
             if (continuar) {
                 document.getElementById('adminCreateForm').reset();
                 toggleCamposEspeciales();
@@ -203,17 +254,18 @@
             const errores = error.response?.data?.errors || {};
             let html = '';
             for (const campo in errores) {
-                errores[campo].forEach(msg => html += `<div>• ${msg}</div>`);
+                errores[campo].forEach(msg => {
+                    html += `<div>• ${msg}</div>`;
+                });
             }
             document.getElementById('errores-validacion').innerHTML = html;
         }
-    };
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         toggleCamposEspeciales();
-        document.getElementById('first_name').focus();
         validarFormulario();
-
+        document.getElementById('first_name').focus();
         document.querySelectorAll('#adminCreateForm input, #adminCreateForm select').forEach(el => {
             el.addEventListener('input', validarFormulario);
             el.addEventListener('change', validarFormulario);

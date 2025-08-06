@@ -16,24 +16,36 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-    public function index()
-    {
-        $users = User::with('roles')->paginate(50); // Cantidad usuarios por página
-        $genders = Gender::all();
-        $documentTypes = DocumentType::all();
-        $userTypes = UserType::all();
-        $academicPrograms = AcademicProgram::all();
-        $institutions = Institution::all();
+public function index(Request $request)
+{
+    $query = User::with('roles');
 
-        return view('dashboards.admin.admin', compact(
-            'users',
-            'genders',
-            'documentTypes',
-            'userTypes',
-            'academicPrograms',
-            'institutions'
-        ));
+    if ($request->has('search') && $request->search !== null) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('first_name', 'like', "%$search%")
+              ->orWhere('last_name', 'like', "%$search%")
+              ->orWhere('email', 'like', "%$search%");
+        });
     }
+
+    $users = $query->paginate(50)->withQueryString(); // Mantener ?search en la URL
+
+    $genders = Gender::all();
+    $documentTypes = DocumentType::all();
+    $userTypes = UserType::all();
+    $academicPrograms = AcademicProgram::all();
+    $institutions = Institution::all();
+
+    return view('dashboards.admin.admin', compact(
+        'users',
+        'genders',
+        'documentTypes',
+        'userTypes',
+        'academicPrograms',
+        'institutions'
+    ));
+}
 
     public function edit(User $user)
     {
