@@ -182,7 +182,8 @@
     </div>
 
     <!-- Errores -->
-    <div id="errores-validacion" class="space-y-2 my-4 text-red-600 text-sm"></div>
+    <div id="errores-validacion" class="absolute top-32 right-4 max-w-xs z-10"></div>
+
 </form>
 
 <!-- Scripts -->
@@ -252,14 +253,48 @@
             }
         } catch (error) {
             const errores = error.response?.data?.errors || {};
-            let html = '';
+            let lista = '';
+
+            // Recorremos todos los errores y los metemos como <li>
             for (const campo in errores) {
                 errores[campo].forEach(msg => {
-                    html += `<div>• ${msg}</div>`;
+                    lista += `<li>${msg}</li>`;
                 });
             }
-            document.getElementById('errores-validacion').innerHTML = html;
+
+            // Bloque de alerta unificado con lista ordenada
+            const html = `
+            <div class="flex p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50
+                        dark:bg-gray-800 dark:text-red-400 shadow-lg" role="alert">
+                <svg class="shrink-0 inline w-4 h-4 me-3 mt-[2px]" aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51
+                            0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3
+                            1.5 1.5 0 0 1 0-3ZM12 15H8a1 1
+                            0 0 1 0-2h1v-3H8a1 1 0 0 1
+                            0-2h2a1 1 0 0 1 1 1v4h1a1 1
+                            0 0 1 0 2Z"/>
+                </svg>
+                <div>
+                    <span class="font-medium">Por favor corrige los siguientes errores:</span>
+                    <ol class="mt-1.5 list-decimal list-inside">
+                        ${lista}
+                    </ol>
+                </div>
+            </div>`;
+
+            const contenedorErrores = document.getElementById('errores-validacion');
+            contenedorErrores.innerHTML = html;
+
+            // Eliminar la alerta después de 5 segundos
+            setTimeout(() => {
+                contenedorErrores.innerHTML = '';
+            }, 5000);
         }
+
+        validarFormulario();
+
     }
 
     document.addEventListener('DOMContentLoaded', () => {
