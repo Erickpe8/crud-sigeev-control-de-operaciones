@@ -207,31 +207,60 @@
     };
 
     const showAlert = (type = 'info', message = '') => {
-        const alertId = `alert-${Date.now()}`;
-        const color = type === 'error'
-            ? { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-400' }
-            : { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-400' };
+    const alertId = `alert-${Date.now()}`;
 
-        const div = document.createElement('div');
-        div.id = alertId;
-        div.className = `p-4 rounded shadow border-l-4 w-96 ${color.bg} ${color.text} ${color.border}`;
-        div.innerHTML = `
-            <div class="flex items-start">
-                <svg class="w-5 h-5 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-10H9v4h2V8zm0 6H9v2h2v-2z" />
-                </svg>
-                <div class="text-sm">${message}</div>
-            </div>
-        `;
-
-        const container = document.getElementById('alert-container');
-        container.appendChild(div);
-
-        setTimeout(() => {
-            const el = document.getElementById(alertId);
-            if (el) el.remove();
-        }, 5000);
+    // Configuración de colores y estilos según el tipo
+    const styles = {
+        error: {
+            bg: 'bg-red-50 dark:bg-gray-800',
+            text: 'text-red-800 dark:text-red-400',
+            icon: `<svg class="shrink-0 inline w-4 h-4 me-3 mt-[2px]"
+                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4
+                            a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8
+                            a1 1 0 0 1 0-2h1v-3H8
+                            a1 1 0 0 1 0-2h2
+                            a1 1 0 0 1 1 1v4h1
+                            a1 1 0 0 1 0 2Z"/>
+                   </svg>`
+        },
+        success: {
+            bg: 'bg-green-50 dark:bg-gray-800',
+            text: 'text-green-800 dark:text-green-400',
+            icon: `<svg class="shrink-0 inline w-4 h-4 me-3 mt-[2px]"
+                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M16.707 5.293a1 1 0 0 0-1.414 0L8 12.586
+                            4.707 9.293a1 1 0 0 0-1.414 1.414l4
+                            4a1 1 0 0 0 1.414 0l8-8
+                            a1 1 0 0 0 0-1.414z"/>
+                   </svg>`
+        }
     };
+
+    const current = styles[type] || styles.error;
+
+    // Crear alerta con formato TailwindCSS
+    const div = document.createElement('div');
+    div.id = alertId;
+    div.className = `flex p-4 mb-4 text-sm rounded-lg ${current.bg} ${current.text}`;
+    div.setAttribute('role', 'alert');
+    div.innerHTML = `
+        ${current.icon}
+        <div>${message}</div>
+    `;
+
+    // Agregarla al contenedor
+    const container = document.getElementById('alert-container');
+    container.appendChild(div);
+
+    // Eliminar después de 5s
+    setTimeout(() => {
+        const el = document.getElementById(alertId);
+        if (el) el.remove();
+    }, 5000);
+};
     </script>
 </body>
 </html>
