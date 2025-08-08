@@ -87,28 +87,46 @@
             </tr>
             </thead>
             <tbody class="divide-y divide-gray-200" id="tablaCuerpoUsuarios">
-            @foreach ($users as $usuario)
-                <tr class="hover:bg-gray-50 transition fila-usuario">
-                    <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
-                    <td class="px-4 py-2">{{ $usuario->email }}</td>
-                    <td class="px-4 py-2">{{ $usuario->roles->pluck('name')->implode(', ') }}</td>
-                    <td class="px-4 py-2 text-center flex gap-2 justify-center items-center">
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                                onclick="editarUsuario({{ $usuario->id }})">
-                            Editar
-                        </button>
-                        <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block">
-                            @csrf
-                            @method('DELETE')
-                            <button onclick="return confirm('¿Eliminar este usuario?')"
-                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
-                                Eliminar
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
+    @forelse(($users ?? collect()) as $usuario)
+        <tr class="hover:bg-gray-50 transition fila-usuario">
+            <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
+            <td class="px-4 py-2">{{ $usuario->email }}</td>
+            <td class="px-4 py-2">{{ $usuario->roles->pluck('name')->implode(', ') ?: 'sin rol' }}</td>
+            <td class="px-4 py-2 text-center flex gap-2 justify-center items-center">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                        onclick="editarUsuario({{ $usuario->id }})">
+                    Editar
+                </button>
+                <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block">
+                    @csrf
+                    @method('DELETE')
+                    <button onclick="return confirm('¿Eliminar este usuario?')"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
+                        Eliminar
+                    </button>
+                </form>
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="4" class="px-4 py-6 text-center text-gray-500">
+                No hay usuarios para mostrar.
+            </td>
+        </tr>
+    @endforelse
+</tbody>
+
+{{-- Paginación (si $users es paginator) --}}
+@if(isset($users) && method_exists($users, 'links'))
+    <tfoot>
+        <tr>
+            <td colspan="4" class="px-4 py-3">
+                {{ $users->links() }}
+            </td>
+        </tr>
+    </tfoot>
+@endif
+
         </table>
         <div class="mt-6 flex justify-center">
             {{ $users->links('pagination::tailwind') }}

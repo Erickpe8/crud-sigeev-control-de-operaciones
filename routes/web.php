@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
-use App\Http\Controllers\web\Dashboard\UserController;
+use App\Http\Controllers\web\Dashboard\UserController;      
 
 /*
 |--------------------------------------------------------------------------
