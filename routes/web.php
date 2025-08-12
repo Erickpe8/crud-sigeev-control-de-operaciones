@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
-use App\Http\Controllers\web\Dashboard\UserController;      
+use App\Http\Controllers\web\Dashboard\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,8 +37,20 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:super admin')->group(function () {
         Route::get('/dashboard/superadmin', [SuperAdminController::class, 'index'])
             ->name('dashboards.superadmin');
-        // Puedes añadir más rutas para super admin aquí
+
+    // Ruta para actualizar usuarios (EDITAR)
+    Route::put('/superadmin/usuarios/{user}', [SuperAdminController::class, 'update'])
+        ->name('superadmin.usuarios.update');
+
+    // Ruta para eliminar usuarios (ELIMINAR)
+    Route::delete('/superadmin/usuarios/{user}', [SuperAdminController::class, 'destroy'])
+        ->name('superadmin.usuarios.destroy');
+
+    // Ruta para mostrar un usuario específico (GET)
+    Route::get('/superadmin/usuarios/{user}', [SuperAdminController::class, 'show'])
+        ->name('superadmin.usuarios.show');
     });
+
 
     // Admin
     Route::middleware('role:admin')->group(function () {
