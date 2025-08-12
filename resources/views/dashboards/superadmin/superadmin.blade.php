@@ -31,14 +31,28 @@
                                 d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1010 18a7.5 7.5 0 006.65-6.85z"/>
                         </svg>
                     </div>
+
                     <input
                         type="search" name="search" id="search" value="{{ request('search') }}"
                         placeholder="Buscar por nombre o correo..."
-                        class="block w-full p-4 pl-10 pr-28 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
-                    <button type="submit"
-                            class="absolute right-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-4 py-2 focus:outline-none focus:ring-4 focus:ring-blue-300">
-                        Buscar
-                    </button>
+                        class="block w-full p-4 pl-10
+                            pr-40 md:pr-56  {{-- espacio para 2 botones --}}
+                            text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
+                            focus:ring-blue-500 focus:border-blue-500">
+
+                    <!-- Grupo de botones dentro del input -->
+                    <div class="absolute right-2.5 bottom-2.5 flex gap-2">
+                        <button type="button" id="btnClearSearch"
+                                class="bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg text-sm px-4 py-2
+                                    focus:outline-none focus:ring-4 focus:ring-gray-300">
+                            Limpiar
+                        </button>
+                        <button type="submit"
+                                class="bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-4 py-2
+                                    focus:outline-none focus:ring-4 focus:ring-blue-300">
+                            Buscar
+                        </button>
+                    </div>
                 </div>
             </form>
 
@@ -357,13 +371,16 @@
         el.addEventListener('change', validarFormulario);
     });
     // (El input de búsqueda correcto es #search)
-    document.getElementById('search')?.addEventListener('input', function () {
-        const filtro = this.value.toLowerCase();
-        const filas = document.querySelectorAll('.fila-usuario');
-        filas.forEach(fila => {
-            const texto = fila.textContent.toLowerCase();
-            fila.style.display = texto.includes(filtro) ? '' : 'none';
-        });
+
+    document.getElementById('btnClearSearch')?.addEventListener('click', function () {
+    const searchInput = document.getElementById('search');
+    searchInput.value = '';
+
+    // Frontend: mostrar todas las filas
+    document.querySelectorAll('.fila-usuario').forEach(fila => fila.style.display = '');
+
+    // Backend: recargar sin query params (opcional, útil si usas paginación/consulta)
+    window.location.href = window.location.pathname;
     });
 
     validarFormulario();

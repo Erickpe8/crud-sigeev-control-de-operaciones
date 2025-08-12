@@ -26,7 +26,6 @@
             <!-- Buscador -->
             <form method="GET" class="flex-1">
                 <div class="relative w-full">
-                    <!-- Icono lupa -->
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor">
@@ -35,24 +34,29 @@
                         </svg>
                     </div>
 
-                    <!-- Campo de búsqueda -->
                     <input
-                        type="search"
-                        name="search"
-                        id="search"
-                        value="{{ request('search') }}"
+                        type="search" name="search" id="search" value="{{ request('search') }}"
                         placeholder="Buscar por nombre o correo..."
-                        class="block w-full p-4 pl-10 pr-28 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    >
+                        class="block w-full p-4 pl-10
+                            pr-40 md:pr-56  {{-- espacio para 2 botones --}}
+                            text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
+                            focus:ring-blue-500 focus:border-blue-500">
 
-                    <!-- Botón buscar -->
-                    <button type="submit"
-                            class="absolute right-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-4 py-2 focus:outline-none focus:ring-4 focus:ring-blue-300">
-                        Buscar
-                    </button>
+                    <!-- Grupo de botones dentro del input -->
+                    <div class="absolute right-2.5 bottom-2.5 flex gap-2">
+                        <button type="button" id="btnClearSearch"
+                                class="bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg text-sm px-4 py-2
+                                    focus:outline-none focus:ring-4 focus:ring-gray-300">
+                            Limpiar
+                        </button>
+                        <button type="submit"
+                                class="bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-4 py-2
+                                    focus:outline-none focus:ring-4 focus:ring-blue-300">
+                            Buscar
+                        </button>
+                    </div>
                 </div>
             </form>
-
 
             <!-- Botón Registrar -->
             <div>
@@ -342,15 +346,6 @@
 
     document.getElementById('user_type_id').addEventListener('change', toggleCamposEspeciales);
 
-    document.getElementById('buscadorUsuarios').addEventListener('input', function () {
-        const filtro = this.value.toLowerCase();
-        const filas = document.querySelectorAll('.fila-usuario');
-        filas.forEach(fila => {
-            const texto = fila.textContent.toLowerCase();
-            fila.style.display = texto.includes(filtro) ? '' : 'none';
-        });
-    });
-
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
@@ -378,6 +373,16 @@
                 alert('❌ Error al actualizar el usuario.');
             }
         }
+    });
+    document.getElementById('btnClearSearch')?.addEventListener('click', function () {
+    const searchInput = document.getElementById('search');
+    searchInput.value = '';
+
+    // Frontend: mostrar todas las filas
+    document.querySelectorAll('.fila-usuario').forEach(fila => fila.style.display = '');
+
+    // Backend: recargar sin query params (opcional, útil si usas paginación/consulta)
+    window.location.href = window.location.pathname;
     });
 
     validarFormulario();
