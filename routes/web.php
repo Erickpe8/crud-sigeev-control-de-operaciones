@@ -14,7 +14,10 @@ use App\Http\Controllers\web\Dashboard\UserController;
 */
 
 // Rutas públicas
-Route::view('/', 'welcome');
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
 Route::view('/login', 'auth.login')->name('login');
 Route::view('/register', 'auth.register')->name('register');
 Route::view('/terminosycondiciones', 'terminosycondiciones')->name('terminos');

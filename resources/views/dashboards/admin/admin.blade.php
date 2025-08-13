@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel de Administración</title>
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
@@ -384,6 +385,19 @@
     // Backend: recargar sin query params (opcional, útil si usas paginación/consulta)
     window.location.href = window.location.pathname;
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+    // Inyecta CSS para ocultar la "X" del input search en navegadores Webkit
+    const style = document.createElement('style');
+    style.innerHTML = `
+        input[type="search"]::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+    `;
+    document.head.appendChild(style);
+    });
+
 
     validarFormulario();
 </script>
