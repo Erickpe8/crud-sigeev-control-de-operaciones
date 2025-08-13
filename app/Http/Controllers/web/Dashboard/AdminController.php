@@ -49,7 +49,7 @@ public function index(Request $request)
 
     public function edit(User $user)
     {
-        if ($user->hasRole('super admin')) {
+        if ($user->hasRole('superadmin')) {
             abort(403, 'No puedes editar al Super Admin.');
         }
 
@@ -71,7 +71,7 @@ public function index(Request $request)
 
 public function update(Request $request, User $user)
 {
-    if ($user->hasRole('super admin')) {
+    if ($user->hasRole('superadmin')) {
         return $request->expectsJson()
             ? response()->json(['message' => 'No puedes editar al Super Admin.'], 403)
             : abort(403, 'No puedes editar al Super Admin.');
@@ -158,7 +158,7 @@ public function update(Request $request, User $user)
 
     public function destroy(User $user)
     {
-        if ($user->hasRole('super admin')) {
+        if ($user->hasRole('superadmin')) {
             abort(403, 'No puedes eliminar al Super Admin.');
         }
 

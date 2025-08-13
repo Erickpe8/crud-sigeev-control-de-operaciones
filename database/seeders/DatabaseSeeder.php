@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->count(100)->create()->each(function ($user) {
             // Asignar rol según tipo de usuario
             if ($user->user_type_id === 1) {
-                $user->assignRole('super admin');
+                $user->assignRole('superadmin');
             } elseif ($user->user_type_id === 4) {
                 $user->assignRole('admin');
             } else {

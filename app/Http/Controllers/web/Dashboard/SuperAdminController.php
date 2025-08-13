@@ -152,104 +152,137 @@ class SuperAdminController extends Controller
     }
 
     public function update(UpdateUserRequest $request, User $user)
-    {
-        $auth = auth()->user();
+{
+    $auth = auth()->user();
 
-        // 1) Guardrails de autorización
-        if ($user->hasRole('superadmin') && !$auth?->hasRole('superadmin')) {
-            return $request->expectsJson()
-                ? response()->json(['message' => 'No autorizado para editar a un superadmin.'], 403)
-                : abort(403, 'No autorizado para editar a un superadmin.');
-        }
-
-        $data = $request->validated();
-
-        // 2) Normalización de datos
-        if (isset($data['email'])) {
-            $data['email'] = mb_strtolower($data['email']);
-        }
-        if (array_key_exists('birthdate', $data)) {
-            $data['birthdate'] = $data['birthdate'] ? $this->parseBirthdate($data['birthdate']) : null;
-        }
-
-        try {
-            $updated = DB::transaction(function () use ($user, $data, $auth) {
-
-                // 3) Fill seguro (sin password/role)
-                $fillable = collect($data)->except(['password', 'role'])->toArray();
-                $user->fill($fillable);
-
-                // 4) Password opcional
-                if (!empty($data['password'])) {
-                    $user->password = Hash::make($data['password']);
-                }
-
-                // 5) Guarda solo si hay cambios reales
-                if ($user->isDirty()) {
-                    $user->save();
-                }
-
-                // 6) Cambio de rol (si fue enviado)
-                if (array_key_exists('role', $data) && $data['role'] !== null && $data['role'] !== '') {
-                    $newRole = $data['role'];
-
-                    // Solo superadmin puede tocar roles
-                    if (!$auth?->hasRole('superadmin')) {
-                        throw new \RuntimeException('No autorizado para modificar roles.');
-                    }
-
-                    // Evitar degradarte si eres tú y eres superadmin
-                    if ($auth->id === $user->id && $user->hasRole('superadmin') && $newRole !== 'superadmin') {
-                        throw new \RuntimeException('No puedes degradar tu propio rol de superadmin.');
-                    }
-
-                    // Validar que el rol exista
-                    if (!Role::where('name', $newRole)->exists()) {
-                        throw new \RuntimeException('El rol especificado no existe.');
-                    }
-
-                    // Solo sincroniza si realmente cambia
-                    if (!$user->hasRole($newRole) || $user->roles()->count() !== 1) {
-                        $user->syncRoles([$newRole]);
-                    }
-                }
-
-                return $user->load('roles');
-            });
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Usuario actualizado correctamente.',
-                    'user'    => $updated,
-                ], 200);
-            }
-
-            return redirect()
-                ->route('dashboards.superadmin')
-                ->with('success', 'Usuario actualizado correctamente.');
-
-        } catch (\RuntimeException $ex) {
-            // Reglas de negocio (422)
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $ex->getMessage()], 422);
-            }
-            return back()->withErrors(['role' => $ex->getMessage()]);
-        } catch (\Illuminate\Database\QueryException $ex) {
-            // Conflictos de unique u otros (422 por datos del usuario)
-            $msg = 'No se pudo actualizar el usuario. Verifica que el correo/usuario no estén repetidos.';
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $msg], 422);
-            }
-            return back()->withErrors(['general' => $msg])->withInput();
-        } catch (\Throwable $e) {
-            Log::error('Error al actualizar usuario: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
-
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'Error interno del servidor.'], 500);
-            }
-            return back()->withErrors(['general' => 'Error al actualizar usuario.']);
-        }
+    // 1) Guardrails de autorización
+    if ($user->hasRole('superadmin') && !$auth?->hasRole('superadmin')) {
+        return $request->expectsJson()
+            ? response()->json(['message' => 'No autorizado para editar a un superadmin.'], 403)
+            : abort(403, 'No autorizado para editar a un superadmin.');
     }
+
+    // ✅ 1.1 Normalización inicial (limpiar campos antes de validar)
+    $request->merge([
+        'email' => trim(mb_strtolower($request->input('email'))),
+        'document_number' => trim($request->input('document_number')),
+    ]);
+
+    // 2) Revalidar con reglas condicionales
+    $userId = $user->id;
+
+    $rules = [
+        'first_name' => 'required|string|max:100',
+        'last_name'  => 'required|string|max:100',
+        'gender_id'  => 'nullable|exists:genders,id',
+        'document_type_id' => 'nullable|exists:document_types,id',
+        'user_type_id'     => 'nullable|exists:user_types,id',
+        'academic_program_id' => 'nullable|exists:academic_programs,id',
+        'institution_id'      => 'nullable|exists:institutions,id',
+        'company_name' => 'nullable|string|max:255',
+        'company_address' => 'nullable|string|max:255',
+        'birthdate' => 'nullable|string',
+        'status' => 'nullable|boolean',
+        'accepted_terms' => 'nullable|boolean',
+    ];
+
+    // Validación condicional para email
+    if ($request->email !== $user->email) {
+        $rules['email'] = [
+            'required', 'email',
+            Rule::unique('users', 'email')->ignore($userId),
+        ];
+    } else {
+        $rules['email'] = ['required', 'email'];
+    }
+
+    // Validación condicional para document_number
+    if ($request->document_number !== $user->document_number) {
+        $rules['document_number'] = [
+            'nullable', 'string', 'max:50',
+            Rule::unique('users', 'document_number')->ignore($userId),
+        ];
+    }
+
+    $data = $request->validate($rules);
+
+    // 3) Normalización final
+    if (array_key_exists('birthdate', $data)) {
+        $data['birthdate'] = $data['birthdate'] ? $this->parseBirthdate($data['birthdate']) : null;
+    }
+
+    try {
+        $updated = DB::transaction(function () use ($user, $data, $auth) {
+
+            // 4) Fill seguro
+            $fillable = collect($data)->except(['password', 'role'])->toArray();
+            $user->fill($fillable);
+
+            // 5) Password opcional
+            if (!empty($data['password'])) {
+                $user->password = Hash::make($data['password']);
+            }
+
+            // 6) Guarda si hay cambios
+            if ($user->isDirty()) {
+                $user->save();
+            }
+
+            // 7) Cambio de rol
+            if (array_key_exists('role', $data) && $data['role'] !== null && $data['role'] !== '') {
+                $newRole = $data['role'];
+
+                if (!$auth?->hasRole('superadmin')) {
+                    throw new \RuntimeException('No autorizado para modificar roles.');
+                }
+
+                if ($auth->id === $user->id && $user->hasRole('superadmin') && $newRole !== 'superadmin') {
+                    throw new \RuntimeException('No puedes degradar tu propio rol de superadmin.');
+                }
+
+                if (!Role::where('name', $newRole)->exists()) {
+                    throw new \RuntimeException('El rol especificado no existe.');
+                }
+
+                if (!$user->hasRole($newRole) || $user->roles()->count() !== 1) {
+                    $user->syncRoles([$newRole]);
+                }
+            }
+
+            return $user->load('roles');
+        });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Usuario actualizado correctamente.',
+                'user'    => $updated,
+            ], 200);
+        }
+
+        return redirect()
+            ->route('dashboards.superadmin')
+            ->with('success', 'Usuario actualizado correctamente.');
+
+    } catch (\RuntimeException $ex) {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $ex->getMessage()], 422);
+        }
+        return back()->withErrors(['role' => $ex->getMessage()]);
+    } catch (\Illuminate\Database\QueryException $ex) {
+        $msg = 'No se pudo actualizar el usuario. Verifica que el correo/usuario no estén repetidos.';
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $msg], 422);
+        }
+        return back()->withErrors(['general' => $msg])->withInput();
+    } catch (\Throwable $e) {
+        Log::error('Error al actualizar usuario: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Error interno del servidor.'], 500);
+        }
+        return back()->withErrors(['general' => 'Error al actualizar usuario.']);
+    }
+}
 
     public function destroy(Request $request, User $user)
     {
@@ -327,7 +360,7 @@ class StoreUserRequest extends FormRequest
         return [
             'first_name'          => 'required|string|max:100',
             'last_name'           => 'required|string|max:100',
-            'email'               => 'required|email:rfc,dns|unique:users,email',
+            'email'               => 'required|email|unique:users,email',
             'password'            => 'required|string|min:8|confirmed',
             'gender_id'           => 'nullable|exists:genders,id',
             'document_type_id'    => 'nullable|exists:document_types,id',
@@ -371,8 +404,8 @@ class UpdateUserRequest extends FormRequest
         return [
             'first_name'          => 'required|string|max:100',
             'last_name'           => 'required|string|max:100',
-            'email'               => [
-                'required', 'email:rfc,dns',
+            'email' => [
+                'required', 'email',
                 Rule::unique('users','email')->ignore($userId),
             ],
             'password'            => 'nullable|string|min:8|confirmed',

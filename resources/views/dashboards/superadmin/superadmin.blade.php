@@ -261,7 +261,7 @@
         document.getElementById('formularioEdicion').classList.remove('hidden');
         document.getElementById('mensajeBienvenida')?.classList.add('hidden');
 
-        form.action = `/usuarios/${id}`;
+        form.action = `/superadmin/usuarios/${id}`;
 
         // Relleno base
         const fields = [...camposRequeridos, ...camposEstudiante, ...camposEmpresa];
@@ -397,6 +397,50 @@
     }); */
 
     validarFormulario();
+</script>
+
+<script>
+document.getElementById('formEditarUsuario').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    // Convertir FormData a objeto para poder mostrarlo en tabla
+    const payload = {};
+    formData.forEach((value, key) => payload[key] = value);
+
+    // Mostrar datos en tabla
+    console.table(payload);
+
+    try {
+        const response = await axios.post(form.action, formData, {
+            headers: { 'Accept': 'application/json' }
+        });
+        console.log('%c✅ Usuario actualizado correctamente', 'color: green; font-weight: bold;');
+        console.log(response.data); // Opcional: ver respuesta del servidor
+
+        alert('✅ Usuario actualizado correctamente');
+        location.reload();
+    } catch (error) {
+        console.error('%c❌ Error en la petición', 'color: red; font-weight: bold;');
+
+        if (error.response) {
+            console.error('Código de estado:', error.response.status);
+            console.error('Respuesta del servidor:', error.response.data);
+
+            if (error.response.status === 422) {
+                console.warn('Errores de validación detectados:');
+                console.table(error.response.data.errors);
+            }
+        } else if (error.request) {
+            console.error('No hubo respuesta del servidor.');
+            console.error(error.request);
+        } else {
+            console.error('Error al configurar la solicitud:', error.message);
+        }
+    }
+});
 </script>
 
 </body>

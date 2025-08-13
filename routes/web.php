@@ -37,7 +37,7 @@ Route::post('/logout', function () {
 Route::middleware(['auth'])->group(function () {
 
     // Super Admin
-    Route::middleware('role:super admin')->group(function () {
+    Route::middleware('role:superadmin')->group(function () {
         Route::get('/dashboard/superadmin', [SuperAdminController::class, 'index'])
             ->name('dashboards.superadmin');
 
