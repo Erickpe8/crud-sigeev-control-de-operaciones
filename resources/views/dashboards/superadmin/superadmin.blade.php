@@ -112,14 +112,14 @@
                             Editar
                         </button>
 
-                        <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block"
+                        <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}" class="inline-block"
                               onsubmit="return confirmarEliminacion({{ $usuario->id }}, {{ $isSelf ? 'true' : 'false' }}, {{ $isSuper ? 'true' : 'false' }})">
                             @csrf
                             @method('DELETE')
                             <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
                                 Eliminar
                             </button>
-                        </form>
+                        </form><!--  -->
                     </td>
                 </tr>
             @endforeach
