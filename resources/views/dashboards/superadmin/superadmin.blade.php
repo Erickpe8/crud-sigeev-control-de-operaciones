@@ -329,43 +329,6 @@
         return confirm('¿Eliminar este usuario?');
     }
 
-    // Evitar auto-degradación (superadmin -> otro rol)
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const actionUserId = parseInt(form.action.split('/').pop());
-        const selectedRole = form['role']?.value || null;
-
-        // Si soy yo mismo y estoy en superadmin, no me permito bajar rol
-        if (actionUserId === authId) {
-            const myRow = usuarios.find(u => u.id === authId);
-            const myCurrentRole = (myRow?.roles?.[0]?.name) || 'user';
-            if (myCurrentRole === 'superadmin' && selectedRole && selectedRole !== 'superadmin') {
-                alert('Por seguridad no puedes degradar tu propio rol de superadmin.');
-                return;
-            }
-        }
-
-        const formData = new FormData(form);
-        formData.append('_method', 'PUT');
-        formData.set('accepted_terms', 1);
-
-        try {
-            await axios.post(form.action, formData, { headers: { 'Accept': 'application/json' } });
-            alert('✅ Usuario actualizado correctamente');
-            location.reload();
-        } catch (error) {
-            if (error.response && error.response.status === 422) {
-                const errors = error.response.data.errors;
-                let mensaje = 'Corrige los siguientes errores:\n';
-                for (const campo in errors) mensaje += `- ${errors[campo].join(', ')}\n`;
-                alert(mensaje);
-            } else {
-                alert('❌ Error al actualizar el usuario.');
-            }
-        }
-    });
-
     // Wiring
     form.querySelectorAll('input, select').forEach(el => {
         el.addEventListener('input', validarFormulario);
@@ -384,7 +347,7 @@
     window.location.href = window.location.pathname;
     });
 
-/*     document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
         // Inyecta CSS para ocultar la "X" del input search en navegadores Webkit
         const style = document.createElement('style');
         style.innerHTML = `
@@ -394,7 +357,7 @@
             }
         `;
         document.head.appendChild(style);
-    }); */
+    });
 
     validarFormulario();
 </script>

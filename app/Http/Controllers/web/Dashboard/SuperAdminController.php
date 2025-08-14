@@ -228,10 +228,11 @@ class SuperAdminController extends Controller
                 $user->save();
             }
 
-            // 7) Cambio de rol
+// 7) Cambio de rol (forzado, manual)
             if (array_key_exists('role', $data) && $data['role'] !== null && $data['role'] !== '') {
                 $newRole = $data['role'];
 
+                // Solo superadmin puede cambiar roles
                 if (!$auth?->hasRole('superadmin')) {
                     throw new \RuntimeException('No autorizado para modificar roles.');
                 }
@@ -240,13 +241,24 @@ class SuperAdminController extends Controller
                     throw new \RuntimeException('No puedes degradar tu propio rol de superadmin.');
                 }
 
-                if (!Role::where('name', $newRole)->exists()) {
+                $roleModel = Role::where('name', $newRole)->first();
+                if (!$roleModel) {
                     throw new \RuntimeException('El rol especificado no existe.');
                 }
 
-                if (!$user->hasRole($newRole) || $user->roles()->count() !== 1) {
-                    $user->syncRoles([$newRole]);
-                }
+                // Limpieza manual
+                DB::table('model_has_roles')
+                    ->where('model_id', $user->id)
+                    ->where('model_type', User::class)
+                    ->delete();
+
+                DB::table('model_has_roles')->insert([
+                    'role_id'    => $roleModel->id,
+                    'model_type' => User::class,
+                    'model_id'   => $user->id,
+                ]);
+
+                \Log::info("✅ Rol forzado actualizado para el usuario {$user->id} a: {$newRole}");
             }
 
             return $user->load('roles');
