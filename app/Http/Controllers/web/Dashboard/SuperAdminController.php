@@ -184,6 +184,8 @@ class SuperAdminController extends Controller
         'birthdate' => 'nullable|string',
         'status' => 'nullable|boolean',
         'accepted_terms' => 'nullable|boolean',
+        'role' => 'nullable|string|exists:roles,name',
+
     ];
 
     // Validación condicional para email
