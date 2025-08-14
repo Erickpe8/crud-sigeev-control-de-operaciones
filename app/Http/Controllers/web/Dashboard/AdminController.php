@@ -156,15 +156,43 @@ public function update(Request $request, User $user)
     }
 }
 
-    public function destroy(User $user)
-    {
-        if ($user->hasRole('superadmin')) {
-            abort(403, 'No puedes eliminar al Super Admin.');
-        }
+public function destroy(User $user)
+{
+    $auth = auth()->user();
 
+    // No auto-eliminarse
+    if ($auth && $auth->id === $user->id) {
+        return back()->withErrors(['error' => 'No puedes eliminar tu propio usuario.']);
+    }
+
+    // Un admin no puede eliminar a un superadmin
+    if ($user->hasRole('superadmin')) {
+        if (request()->expectsJson()) {
+            return response()->json(['message' => 'No puedes eliminar al Super Admin.'], 403);
+        }
+        abort(403, 'No puedes eliminar al Super Admin.');
+    }
+
+    try {
         $user->delete();
 
+        if (request()->expectsJson()) {
+            return response()->json(['message' => 'Usuario eliminado correctamente.'], 200);
+        }
+
         return back()->with('success', 'Usuario eliminado correctamente.');
+    } catch (\Throwable $e) {
+        \Log::error('Error al eliminar usuario', [
+            'user_id' => $user->id,
+            'msg' => $e->getMessage()
+        ]);
+
+        if (request()->expectsJson()) {
+            return response()->json(['message' => 'No se pudo eliminar el usuario.'], 500);
+        }
+
+        return back()->withErrors(['error' => 'No se pudo eliminar el usuario.']);
     }
+}
 
 }

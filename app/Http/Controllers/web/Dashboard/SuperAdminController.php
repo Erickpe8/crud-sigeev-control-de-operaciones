@@ -162,7 +162,7 @@ class SuperAdminController extends Controller
             : abort(403, 'No autorizado para editar a un superadmin.');
     }
 
-    // ✅ 1.1 Normalización inicial (limpiar campos antes de validar)
+    // Normalización inicial (limpiar campos antes de validar)
     $request->merge([
         'email' => trim(mb_strtolower($request->input('email'))),
         'document_number' => trim($request->input('document_number')),
@@ -184,6 +184,8 @@ class SuperAdminController extends Controller
         'birthdate' => 'nullable|string',
         'status' => 'nullable|boolean',
         'accepted_terms' => 'nullable|boolean',
+        'role' => 'nullable|string|exists:roles,name',
+
     ];
 
     // Validación condicional para email

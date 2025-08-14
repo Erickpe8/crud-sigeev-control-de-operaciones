@@ -65,8 +65,10 @@ Route::middleware(['auth'])->group(function () {
             ->name('usuarios.update');
 
         // Ruta para eliminar usuarios (ELIMINAR)
-        Route::delete('/usuarios/{user}', [UserController::class, 'destroy'])
-            ->name('usuarios.destroy');
+        Route::middleware(['auth', 'role:admin'])->group(function () {
+            Route::delete('/usuarios/{user}', [AdminController::class, 'destroy'])
+                ->name('usuarios.destroy');
+        });
 
         // Ruta para mostrar un usuario específico (GET)
         Route::get('/usuarios/{user}', [UserController::class, 'show'])
