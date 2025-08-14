@@ -11,7 +11,7 @@
 
 <div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
     <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios — Superadmin</h1>
-
+    {{-- Hola nelly --}}
     <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded">
         <p class="text-gray-700 leading-relaxed">
             Bienvenido, <strong>Superadministrador</strong>. Aquí puedes <strong>crear, editar, eliminar</strong> y
