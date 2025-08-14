@@ -162,7 +162,7 @@ class SuperAdminController extends Controller
             : abort(403, 'No autorizado para editar a un superadmin.');
     }
 
-    // ✅ Normalización inicial (limpiar campos antes de validar)
+    // Normalización inicial (limpiar campos antes de validar)
     $request->merge([
         'email' => trim(mb_strtolower($request->input('email'))),
         'document_number' => trim($request->input('document_number')),
