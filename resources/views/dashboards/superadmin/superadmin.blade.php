@@ -11,7 +11,7 @@
 
 <div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
     <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios — Superadmin</h1>
-
+    {{-- Hola nelly --}}
     <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded">
         <p class="text-gray-700 leading-relaxed">
             Bienvenido, <strong>Superadministrador</strong>. Aquí puedes <strong>crear, editar, eliminar</strong> y
@@ -261,7 +261,7 @@
         document.getElementById('formularioEdicion').classList.remove('hidden');
         document.getElementById('mensajeBienvenida')?.classList.add('hidden');
 
-        form.action = `/usuarios/${id}`;
+        form.action = `/superadmin/usuarios/${id}`;
 
         // Relleno base
         const fields = [...camposRequeridos, ...camposEstudiante, ...camposEmpresa];
@@ -329,43 +329,6 @@
         return confirm('¿Eliminar este usuario?');
     }
 
-    // Evitar auto-degradación (superadmin -> otro rol)
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const actionUserId = parseInt(form.action.split('/').pop());
-        const selectedRole = form['role']?.value || null;
-
-        // Si soy yo mismo y estoy en superadmin, no me permito bajar rol
-        if (actionUserId === authId) {
-            const myRow = usuarios.find(u => u.id === authId);
-            const myCurrentRole = (myRow?.roles?.[0]?.name) || 'user';
-            if (myCurrentRole === 'superadmin' && selectedRole && selectedRole !== 'superadmin') {
-                alert('Por seguridad no puedes degradar tu propio rol de superadmin.');
-                return;
-            }
-        }
-
-        const formData = new FormData(form);
-        formData.append('_method', 'PUT');
-        formData.set('accepted_terms', 1);
-
-        try {
-            await axios.post(form.action, formData, { headers: { 'Accept': 'application/json' } });
-            alert('✅ Usuario actualizado correctamente');
-            location.reload();
-        } catch (error) {
-            if (error.response && error.response.status === 422) {
-                const errors = error.response.data.errors;
-                let mensaje = 'Corrige los siguientes errores:\n';
-                for (const campo in errors) mensaje += `- ${errors[campo].join(', ')}\n`;
-                alert(mensaje);
-            } else {
-                alert('❌ Error al actualizar el usuario.');
-            }
-        }
-    });
-
     // Wiring
     form.querySelectorAll('input, select').forEach(el => {
         el.addEventListener('input', validarFormulario);
@@ -384,7 +347,7 @@
     window.location.href = window.location.pathname;
     });
 
-/*     document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
         // Inyecta CSS para ocultar la "X" del input search en navegadores Webkit
         const style = document.createElement('style');
         style.innerHTML = `
@@ -394,9 +357,53 @@
             }
         `;
         document.head.appendChild(style);
-    }); */
+    });
 
     validarFormulario();
+</script>
+
+<script>
+document.getElementById('formEditarUsuario').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    // Convertir FormData a objeto para poder mostrarlo en tabla
+    const payload = {};
+    formData.forEach((value, key) => payload[key] = value);
+
+    // Mostrar datos en tabla
+    console.table(payload);
+
+    try {
+        const response = await axios.post(form.action, formData, {
+            headers: { 'Accept': 'application/json' }
+        });
+        console.log('%c✅ Usuario actualizado correctamente', 'color: green; font-weight: bold;');
+        console.log(response.data); // Opcional: ver respuesta del servidor
+
+        alert('✅ Usuario actualizado correctamente');
+        location.reload();
+    } catch (error) {
+        console.error('%c❌ Error en la petición', 'color: red; font-weight: bold;');
+
+        if (error.response) {
+            console.error('Código de estado:', error.response.status);
+            console.error('Respuesta del servidor:', error.response.data);
+
+            if (error.response.status === 422) {
+                console.warn('Errores de validación detectados:');
+                console.table(error.response.data.errors);
+            }
+        } else if (error.request) {
+            console.error('No hubo respuesta del servidor.');
+            console.error(error.request);
+        } else {
+            console.error('Error al configurar la solicitud:', error.message);
+        }
+    }
+});
 </script>
 
 </body>

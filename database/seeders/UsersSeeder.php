@@ -28,7 +28,7 @@ class UsersSeeder extends Seeder
                 'accepted_terms' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
-                'role' => 'super admin'
+                'role' => 'superadmin'
             ],
             [
                 'id' => 2,

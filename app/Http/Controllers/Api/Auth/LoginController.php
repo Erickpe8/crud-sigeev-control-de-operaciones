@@ -27,7 +27,7 @@ class LoginController extends Controller
             $user = Auth::user();
 
             // Redirección dinámica según el rol
-            if ($user->hasRole('super admin')) {
+            if ($user->hasRole('superadmin')) {
                 return redirect()->route('dashboards.superadmin');
             } elseif ($user->hasRole('admin')) {
                 return redirect()->route('dashboards.admin');
