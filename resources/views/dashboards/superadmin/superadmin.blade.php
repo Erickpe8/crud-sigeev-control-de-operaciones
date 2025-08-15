@@ -58,9 +58,9 @@
 
             <!-- Botón Registrar -->
             <div>
-                <a href="{{ route('admin.usuarios.crear') }}"
-                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
-                    (No sirve)Registrar Un Nuevo Usuario
+                <a href="{{ route('panel.usuarios.crear') }}"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
+                    Registrar Un Nuevo Usuario
                 </a>
             </div>
 
@@ -112,14 +112,20 @@
                             Editar
                         </button>
 
-                        <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block"
-                              onsubmit="return confirmarEliminacion({{ $usuario->id }}, {{ $isSelf ? 'true' : 'false' }}, {{ $isSuper ? 'true' : 'false' }})">
+                    @php
+                        $isSuperAdmin = $usuario->hasRole('superadmin');
+                    @endphp
+
+                    @if(!$isSuperAdmin)
+                        <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}" class="inline-block"
+                            onsubmit="return confirmarEliminacion({{ $usuario->id }}, {{ $isSelf ? 'true' : 'false' }}, {{ $isSuper ? 'true' : 'false' }})">
                             @csrf
                             @method('DELETE')
                             <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
                                 Eliminar
                             </button>
                         </form>
+                    @endif
                     </td>
                 </tr>
             @endforeach

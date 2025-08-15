@@ -61,7 +61,7 @@
 
             <!-- Botón Registrar -->
             <div>
-                <a href="{{ route('admin.usuarios.crear') }}"
+                <a href="{{ route('panel.usuarios.crear') }}"
                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
                     Registrar Un Nuevo Usuario
                 </a>
@@ -102,6 +102,11 @@
                         onclick="editarUsuario({{ $usuario->id }})">
                     Editar
                 </button>
+            @php
+                $isSuperAdmin = $usuario->hasRole('superadmin');
+            @endphp
+
+            @if(!$isSuperAdmin)
                 <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block">
                     @csrf
                     @method('DELETE')
@@ -110,6 +115,7 @@
                         Eliminar
                     </button>
                 </form>
+            @endif
             </td>
         </tr>
     @empty

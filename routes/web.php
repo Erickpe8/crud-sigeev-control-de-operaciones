@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     // Ruta para eliminar usuarios (ELIMINAR)
     Route::delete('/superadmin/usuarios/{user}', [SuperAdminController::class, 'destroy'])
         ->name('superadmin.usuarios.destroy');
+        
 
     // Ruta para mostrar un usuario específico (GET)
     Route::get('/superadmin/usuarios/{user}', [SuperAdminController::class, 'show'])
@@ -65,15 +66,14 @@ Route::middleware(['auth'])->group(function () {
             ->name('usuarios.update');
 
         // Ruta para eliminar usuarios (ELIMINAR)
-        Route::middleware(['auth', 'role:admin'])->group(function () {
-            Route::delete('/usuarios/{user}', [AdminController::class, 'destroy'])
-                ->name('usuarios.destroy');
-        });
+        Route::delete('/usuarios/{user}', [AdminController::class, 'destroy'])
+            ->name('usuarios.destroy');
 
         // Ruta para mostrar un usuario específico (GET)
         Route::get('/usuarios/{user}', [UserController::class, 'show'])
             ->name('usuarios.show');
     });
+
 
     // Usuario estándar
     Route::middleware('role:user')->group(function () {

@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Crear usuarios aleatorios con factory
-        User::factory()->count(100)->create()->each(function ($user) {
+        User::factory()->count(1000)->create()->each(function ($user) {
             // Asignar rol según tipo de usuario
             if ($user->user_type_id === 1) {
                 $user->assignRole('superadmin');

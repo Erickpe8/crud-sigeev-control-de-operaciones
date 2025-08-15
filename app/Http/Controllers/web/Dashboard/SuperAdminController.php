@@ -298,28 +298,66 @@ class SuperAdminController extends Controller
     }
 }
 
-    public function destroy(Request $request, User $user)
-    {
-        if ($user->hasRole('superadmin')) {
-            return $request->expectsJson()
-                ? response()->json(['message' => 'No puedes eliminar a un superadmin.'], 403)
-                : abort(403, 'No puedes eliminar a un superadmin.');
-        }
-        if ($user->id === auth()->id()) {
-            return $request->expectsJson()
-                ? response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 403)
-                : abort(403, 'No puedes eliminar tu propia cuenta.');
-        }
+public function destroy(Request $request, User $user)
+{
+    $auth = $request->user();
 
-        $user->delete();
+    // 1) Guardrails
+    if ($user->id === $auth->id) {
+        return $request->expectsJson()
+            ? response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 403)
+            : abort(403, 'No puedes eliminar tu propia cuenta.');
+    }
+
+    if ($user->hasRole('superadmin')) {
+        return $request->expectsJson()
+            ? response()->json(['message' => 'No puedes eliminar a un superadmin.'], 403)
+            : abort(403, 'No puedes eliminar a un superadmin.');
+    }
+
+    try {
+        DB::transaction(function () use ($user) {
+            // 2) Revocar tokens (Sanctum)
+            if (method_exists($user, 'tokens')) {
+                $user->tokens()->delete();
+            } else {
+                // Fallback si no hay relación definida
+                PersonalAccessToken::where('tokenable_type', User::class)
+                    ->where('tokenable_id', $user->id)
+                    ->delete();
+            }
+
+            // 3) Limpiar relaciones de permisos/roles (Spatie)
+            if (method_exists($user, 'roles')) {
+                $user->syncRoles([]); // elimina registros de model_has_roles
+            }
+            if (method_exists($user, 'permissions')) {
+                $user->syncPermissions([]); // por si asignas directos
+            }
+
+            // 4) Eliminar (soft delete si el modelo usa SoftDeletes)
+            $user->delete();
+        });
+
+        // 5) Respuestas coherentes
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Usuario eliminado correctamente.'], 200);
+        }
+        return back()->with('success', 'Usuario eliminado correctamente.');
+
+    } catch (\Throwable $e) {
+        Log::error('Error al eliminar usuario', [
+            'user_id' => $user->id,
+            'by'      => $auth?->id,
+            'error'   => $e->getMessage(),
+        ]);
 
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Usuario eliminado correctamente.']);
+            return response()->json(['message' => 'No se pudo eliminar el usuario.'], 500);
         }
-
-        // 🔁 Redirige al panel de SUPERADMIN
-        return back()->with('success', 'Usuario eliminado correctamente.');
+        return back()->withErrors(['error' => 'No se pudo eliminar el usuario.']);
     }
+}
 
     /** Detecta una columna “de nombre” en la tabla para aliasarla */
     private function pickNameColumn(string $table, array $candidates = ['name','type','title','label','description','descripcion']): ?string
