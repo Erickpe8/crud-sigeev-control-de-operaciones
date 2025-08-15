@@ -112,14 +112,20 @@
                             Editar
                         </button>
 
+                    @php
+                        $isSuperAdmin = $usuario->hasRole('superadmin');
+                    @endphp
+
+                    @if(!$isSuperAdmin)
                         <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}" class="inline-block"
-                              onsubmit="return confirmarEliminacion({{ $usuario->id }}, {{ $isSelf ? 'true' : 'false' }}, {{ $isSuper ? 'true' : 'false' }})">
+                            onsubmit="return confirmarEliminacion({{ $usuario->id }}, {{ $isSelf ? 'true' : 'false' }}, {{ $isSuper ? 'true' : 'false' }})">
                             @csrf
                             @method('DELETE')
                             <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
                                 Eliminar
                             </button>
-                        </form><!--  -->
+                        </form>
+                    @endif
                     </td>
                 </tr>
             @endforeach

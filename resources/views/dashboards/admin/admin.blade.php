@@ -102,6 +102,11 @@
                         onclick="editarUsuario({{ $usuario->id }})">
                     Editar
                 </button>
+            @php
+                $isSuperAdmin = $usuario->hasRole('superadmin');
+            @endphp
+
+            @if(!$isSuperAdmin)
                 <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block">
                     @csrf
                     @method('DELETE')
@@ -110,6 +115,7 @@
                         Eliminar
                     </button>
                 </form>
+            @endif
             </td>
         </tr>
     @empty
