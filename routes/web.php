@@ -2,9 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-
 use App\Http\Controllers\Api\Auth\LoginController;
-use App\Http\Controllers\web\CentralPanelController; // <- Ubícalo en app/Http/Controllers/web
+use App\Http\Controllers\web\CentralPanelController;
+use App\Http\Controllers\web\ProfileEditController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
@@ -83,6 +83,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/usuarios/{user}', [UserController::class, 'show'])
             ->name('usuarios.show');
     });
+
+    /**
+     * Rutas para editar mi propio perfil (Admin y SuperAdmin)
+     */
+
+Route::middleware(['auth', 'role:admin|superadmin'])->group(function () {
+    // Ruta para editar el perfil (recibiendo el ID)
+    Route::get('profile/edit/{id}', [ProfileEditController::class, 'edit'])->name('profile.edit');
+
+    // Ruta para actualizar la información del perfil (recibiendo el ID)
+    Route::put('profile/update/{id}', [ProfileEditController::class, 'update'])->name('profile.update');
+
+    // Ruta para cancelar la edición y redirigir al perfil
+    Route::get('profile/cancel', [ProfileEditController::class, 'cancelEdit'])->name('profile.cancel');
+});
 
     /**
      * Rutas de Usuario estándar
