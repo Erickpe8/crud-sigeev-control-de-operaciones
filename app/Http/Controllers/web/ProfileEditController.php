@@ -11,6 +11,7 @@ use App\Models\UserType;
 use App\Models\AcademicProgram;
 use App\Models\Institution;
 use Spatie\Permission\Models\Role;
+use Carbon\Carbon;
 
 class ProfileEditController extends Controller
 {
@@ -51,9 +52,17 @@ class ProfileEditController extends Controller
             'institution_id' => 'nullable|exists:institutions,id',
             'company_name' => 'nullable|string|max:255',
             'company_address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20', // Campo teléfono
         ]);
 
-        // Actualizar los datos básicos del usuario
+        // Verificar si el usuario tiene el rol de superadmin
+        if ($user->hasRole('superadmin')) {
+            return $request->expectsJson()
+                ? response()->json(['message' => 'No puedes editar al Super Admin.'], 403)
+                : abort(403, 'No puedes editar al Super Admin.');
+        }
+
+        // Rellenar los campos básicos del usuario
         $user->update([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -63,9 +72,10 @@ class ProfileEditController extends Controller
             'gender_id' => $request->gender_id,
             'document_type_id' => $request->document_type_id,
             'user_type_id' => $request->user_type_id,
+            'phone' => $request->phone, // Actualizar teléfono
         ]);
 
-        // Actualizar rol del usuario (usando Spatie)
+        // Actualizar el rol del usuario (usando Spatie)
         $user->syncRoles($request->role);
 
         // Actualizar campos adicionales dinámicos según el tipo de usuario
@@ -85,6 +95,12 @@ class ProfileEditController extends Controller
             $user->company_address = $request->company_address;
         }
 
+        // Convertir la fecha si es necesario
+        if ($request->birthdate && $request->birthdate !== $user->birthdate) {
+            $user->birthdate = Carbon::parse($request->birthdate)->format('Y-m-d');
+        }
+
+        // Guardar cambios en el usuario
         $user->save();
 
         // Redirigir con mensaje de éxito

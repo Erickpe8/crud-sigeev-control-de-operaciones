@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Usuario</title>
+    <title>Editar Información del Perfil</title>
     <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -15,7 +15,10 @@
 @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<form id="editUserForm" class="w-[720px] bg-white rounded-lg shadow-lg p-6 relative">
+<form id="editUserForm" class="w-[720px] bg-white rounded-lg shadow-lg p-6 relative" action="{{ route('profile.update', auth()->user()->id) }}" method="POST" enctype="multipart/form-data">
+    @csrf
+    @method('PUT')
+
     <!-- Cabecera decorativa -->
     <div class="relative h-6 bg-[#ff0000] rounded-t-lg">
         <svg class="absolute top-full left-0 w-full" viewBox="0 0 1440 100" preserveAspectRatio="none">
@@ -111,7 +114,7 @@
         <button type="submit" id="btnActualizar" disabled class="bg-[#ff0000] text-white px-6 py-2 rounded w-full opacity-50 cursor-not-allowed">
             Actualizar Información
         </button>
-        <a href="{{ route('dashboards.' . $scope) }}" class="bg-gray-600 text-white px-6 py-2 rounded w-full">
+        <a href="{{ route('panel') }}" class="bg-gray-600 text-white px-6 py-2 rounded w-full">
             Cancelar
         </a>
     </div>
@@ -129,6 +132,27 @@
     // Lógica para habilitar el botón de actualización solo si los campos son válidos
     const formInputs = document.querySelectorAll('#editUserForm input, #editUserForm select');
     const btnActualizar = document.getElementById('btnActualizar');
+
+    // Activar/desactivar campos según el tipo de usuario
+    document.getElementById('user_type_id').addEventListener('change', function() {
+        const tipo = this.value;
+        const academicSection = document.getElementById('academic_section');
+        const empresaSection = document.getElementById('empresa_section');
+
+        if (tipo == 4) { // Estudiantes
+            academicSection.classList.remove('hidden');
+            empresaSection.classList.add('hidden');
+        } else if (tipo == 2 || tipo == 3) { // Empresas
+            empresaSection.classList.remove('hidden');
+            academicSection.classList.add('hidden');
+        } else {
+            academicSection.classList.add('hidden');
+            empresaSection.classList.add('hidden');
+        }
+    });
+
+    // Ejecutar al cargar la página para mostrar/hide los campos reactivos según el tipo
+    document.getElementById('user_type_id').dispatchEvent(new Event('change'));
 
     function validarFormulario() {
         let formValido = true;
@@ -153,3 +177,4 @@
 
 </body>
 </html>
+
