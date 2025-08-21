@@ -51,8 +51,7 @@
     <div class="grid gap-4 mb-6 md:grid-cols-3">
         <div>
             <label for="user_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de Usuario</label>
-            <select id="user_type_id" name="user_type_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+            <select id="user_type_id" name="user_type_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                 <option value="">Selecciona</option>
                 @foreach ($userTypes as $type)
                     <option value="{{ $type->id }}" {{ auth()->user()->user_type_id == $type->id ? 'selected' : '' }}>{{ $type->type }}</option>
@@ -61,8 +60,7 @@
         </div>
         <div>
             <label for="document_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de Documento</label>
-            <select id="document_type_id" name="document_type_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+            <select id="document_type_id" name="document_type_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                 <option value="">Selecciona</option>
                 @foreach ($documentTypes as $doc)
                     <option value="{{ $doc->id }}" {{ auth()->user()->document_type_id == $doc->id ? 'selected' : '' }}>{{ $doc->name }}</option>
@@ -80,8 +78,7 @@
     <div class="grid gap-4 mb-6 md:grid-cols-3">
         <div>
             <label for="gender_id" class="block mb-2 text-sm font-medium text-gray-900">Sexo</label>
-            <select id="gender_id" name="gender_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+            <select id="gender_id" name="gender_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                 <option value="">Selecciona</option>
                 @foreach ($genders as $gender)
                     <option value="{{ $gender->id }}" {{ auth()->user()->gender_id == $gender->id ? 'selected' : '' }}>{{ $gender->name }}</option>
@@ -107,6 +104,65 @@
         @if(auth()->user()->photo)
             <img src="{{ asset('storage/' . auth()->user()->photo) }}" alt="Foto de Perfil" class="mt-4 h-32 w-32 rounded-full object-cover">
         @endif
+    </div>
+
+    <!-- Restablecer Contraseña -->
+    <div class="col-span-2 mt-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Restablecer Contraseña</h3>
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
+            <input type="password" id="password" name="password"
+                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                   placeholder="Nueva contraseña">
+        </div>
+
+        <div class="mt-4">
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+            <input type="password" id="password_confirmation" name="password_confirmation"
+                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                   placeholder="Confirmar nueva contraseña">
+        </div>
+    </div>
+
+    <!-- Campos adicionales reactivos -->
+    <div id="academic_section" class="col-span-2 hidden">
+        <div class="mb-4">
+            <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
+            <select id="academic_program_id" name="academic_program_id"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                <option value="">Seleccione</option>
+                @foreach ($academicPrograms as $program)
+                    <option value="{{ $program->id }}" {{ old('academic_program_id', auth()->user()->academic_program_id) == $program->id ? 'selected' : '' }}>
+                        {{ $program->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
+            <select id="institution_id" name="institution_id"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                <option value="">Seleccione</option>
+                @foreach ($institutions as $inst)
+                    <option value="{{ $inst->id }}" {{ old('institution_id', auth()->user()->institution_id) == $inst->id ? 'selected' : '' }}>
+                        {{ $inst->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
+    <div id="empresa_section" class="col-span-2 hidden">
+        <div class="mb-4">
+            <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+            <input type="text" id="company_name" name="company_name"
+                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value="{{ old('company_name', auth()->user()->company_name) }}">
+        </div>
+        <div>
+            <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
+            <input type="text" id="company_address" name="company_address"
+                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value="{{ old('company_address', auth()->user()->company_address) }}">
+        </div>
     </div>
 
     <!-- Botones -->
@@ -177,4 +233,3 @@
 
 </body>
 </html>
-
