@@ -42,7 +42,7 @@ class ProfileEditController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'birthdate' => 'nullable|date',
+            'birthdate' => 'nullable|date_format:d/m/Y', // Validar formato d/m/Y
             'document_number' => 'nullable|string|max:50',
             'gender_id' => 'nullable|exists:genders,id',
             'document_type_id' => 'nullable|exists:document_types,id',
@@ -62,12 +62,18 @@ class ProfileEditController extends Controller
                 : abort(403, 'No puedes editar al Super Admin.');
         }
 
+        // Convertir la fecha al formato Y-m-d antes de guardarla
+        $birthdate = null;
+        if ($request->has('birthdate') && $request->birthdate) {
+            $birthdate = Carbon::createFromFormat('d/m/Y', $request->birthdate)->format('Y-m-d'); // Convertir a Y-m-d
+        }
+
         // Rellenar los campos básicos del usuario
         $user->update([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
-            'birthdate' => $request->birthdate,
+            'birthdate' => $birthdate, // Guardar la fecha en formato Y-m-d
             'document_number' => $request->document_number,
             'gender_id' => $request->gender_id,
             'document_type_id' => $request->document_type_id,
@@ -95,11 +101,6 @@ class ProfileEditController extends Controller
             $user->company_address = $request->company_address;
         }
 
-        // Convertir la fecha si es necesario
-        if ($request->birthdate && $request->birthdate !== $user->birthdate) {
-            $user->birthdate = Carbon::parse($request->birthdate)->format('Y-m-d');
-        }
-
         // Guardar cambios en el usuario
         $user->save();
 
@@ -113,3 +114,4 @@ class ProfileEditController extends Controller
         return redirect()->route('profile.edit', auth()->user()->id);
     }
 }
+        

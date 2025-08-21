@@ -95,7 +95,7 @@
         </div>
         <div>
             <label for="birthdate" class="block mb-2 text-sm font-medium text-gray-900">Fecha de Nacimiento</label>
-            <input type="date" id="birthdate" name="birthdate" value="{{ old('birthdate', auth()->user()->birthdate) }}"
+            <input type="text" name="birthdate" value="{{ old('birthdate', $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->format('d/m/Y') : '') }}"
                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
         </div>
     </div>
