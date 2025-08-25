@@ -127,16 +127,7 @@
     @endforelse
 </tbody>
 
-{{-- Paginación (si $users es paginator) --}}
-@if(isset($users) && method_exists($users, 'links'))
-    <tfoot>
-        <tr>
-            <td colspan="4" class="px-4 py-3">
-                {{ $users->links() }}
-            </td>
-        </tr>
-    </tfoot>
-@endif
+
 
         </table>
         <div class="mt-6 flex justify-center">
