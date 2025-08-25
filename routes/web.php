@@ -88,16 +88,24 @@ Route::middleware('auth')->group(function () {
      * Rutas para editar mi propio perfil (Admin y SuperAdmin)
      */
 
-Route::middleware(['auth', 'role:admin|superadmin'])->group(function () {
-    // Ruta para editar el perfil (recibiendo el ID)
-    Route::get('profile/edit/{id}', [ProfileEditController::class, 'edit'])->name('profile.edit');
 
-    // Ruta para actualizar la información del perfil (recibiendo el ID)
-    Route::put('profile/update/{id}', [ProfileEditController::class, 'update'])->name('profile.update');
+    Route::middleware(['auth', 'role:admin|superadmin'])
+        ->prefix('profile')
+        ->name('profile.')
+        ->group(function () {
 
-    // Ruta para cancelar la edición y redirigir al perfil
-    Route::get('profile/cancel', [ProfileEditController::class, 'cancelEdit'])->name('profile.cancel');
-});
+            // Ruta para editar el perfil (recibiendo el usuario con binding)
+            Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
+                ->name('edit');
+
+            // Ruta para actualizar la información del perfil (recibiendo el usuario con binding)
+            Route::put('update/{user}', [ProfileEditController::class, 'update'])
+                ->name('update');
+
+            // Ruta para cancelar la edición y redirigir al perfil
+            Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
+                ->name('cancel');
+        });
 
     /**
      * Rutas de Usuario estándar

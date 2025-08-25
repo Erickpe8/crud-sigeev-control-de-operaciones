@@ -203,8 +203,8 @@
     </div>
 </form>
 
-
 <script>
+    // ====== BASE ORIGINAL ======
     // Lógica para habilitar el botón de actualización solo si los campos son válidos
     const formInputs = document.querySelectorAll('#editUserForm input, #editUserForm select');
     const btnActualizar = document.getElementById('btnActualizar');
@@ -215,15 +215,20 @@
         const academicSection = document.getElementById('academic_section');
         const empresaSection = document.getElementById('empresa_section');
 
+        console.log("📌 Cambio de tipo de usuario:", tipo);
+
         if (tipo == 4) { // Estudiantes
             academicSection.classList.remove('hidden');
             empresaSection.classList.add('hidden');
+            console.log("➡️ Se muestra sección académica");
         } else if (tipo == 2 || tipo == 3) { // Empresas
             empresaSection.classList.remove('hidden');
             academicSection.classList.add('hidden');
+            console.log("➡️ Se muestra sección empresa");
         } else {
             academicSection.classList.add('hidden');
             empresaSection.classList.add('hidden');
+            console.log("➡️ No se muestra sección adicional");
         }
     });
 
@@ -232,15 +237,32 @@
 
     function validarFormulario() {
         let formValido = true;
+        let camposEstado = [];
+
         formInputs.forEach(input => {
+            let valido = true;
+
             if (input.required && !input.value.trim()) {
+                valido = false;
                 formValido = false;
             }
+
+            camposEstado.push({
+                name: input.name,
+                value: input.value,
+                requerido: input.required,
+                valido: valido
+            });
         });
+
+        console.log("📝 Estado de los campos:", camposEstado);
+        console.log("✅ ¿Formulario válido?:", formValido);
 
         btnActualizar.disabled = !formValido;
         btnActualizar.classList.toggle('opacity-50', !formValido);
         btnActualizar.classList.toggle('cursor-not-allowed', !formValido);
+
+        return { formValido, camposEstado };
     }
 
     formInputs.forEach(input => {
@@ -249,6 +271,150 @@
     });
 
     validarFormulario(); // Validación inicial
+
+    // ====== EXTENSIÓN: try/catch para saber qué datos NO pasan al controlador ======
+    // Utilidades mínimas para pintar errores de validación del backend (422)
+    function clearFieldErrors(form) {
+        form.querySelectorAll('.ring-2').forEach(i => i.classList.remove('ring-2','ring-red-400'));
+        form.querySelectorAll('[data-error-label="true"]').forEach(l => l.remove());
+    }
+    function setFieldErrors(form, errors) {
+        Object.entries(errors).forEach(([field, msgs]) => {
+            const input = form.querySelector(`[name="${field}"]`);
+            if (!input) return;
+            input.classList.add('ring-2','ring-red-400');
+            const label = document.createElement('div');
+            label.dataset.errorLabel = "true";
+            label.className = 'text-xs text-red-600 mt-1';
+            label.textContent = msgs.join(' ');
+            input.insertAdjacentElement('afterend', label);
+        });
+    }
+
+    // ====== NUEVO: limpiar FormData (no enviar vacíos) ======
+    function limpiarFormData(fd) {
+        // Reconstituye el FormData preservando múltiples valores (e.g., roles[])
+        const limpio = new FormData();
+        const omitidos = new Set();
+
+        // Recolectamos todas las keys únicas
+        const keys = Array.from(fd.keys());
+
+        keys.forEach((key) => {
+            const valores = fd.getAll(key);
+            let agregóAlguno = false;
+
+            valores.forEach((valor) => {
+                // Si es archivo, solo enviar si tiene tamaño (>0)
+                if (valor instanceof File) {
+                    if (valor && valor.size > 0) {
+                        limpio.append(key, valor);
+                        agregóAlguno = true;
+                    }
+                    return;
+                }
+                // Para strings u otros: trim y omitir vacíos
+                const str = String(valor ?? '').trim();
+                if (str !== '') {
+                    limpio.append(key, valor);
+                    agregóAlguno = true;
+                }
+            });
+
+            if (!agregóAlguno) {
+                omitidos.add(key);
+            }
+        });
+
+        // Loguea qué campos se omiten (quedan “como estaban” en el backend)
+        if (omitidos.size) {
+            console.log('🧹 Campos omitidos por venir vacíos (no se envían):', Array.from(omitidos));
+        }
+
+        return limpio;
+    }
+
+    // Envío con Axios capturando 422 (qué campos no pasan) + limpieza de vacíos
+    (function setupEnvio() {
+        const form = document.getElementById('editUserForm');
+        if (!form) return;
+
+        // Configuración CSRF si existe meta (Laravel)
+        if (typeof axios !== 'undefined') {
+            const csrf = document.querySelector('meta[name="csrf-token"]');
+            if (csrf) {
+                axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+                axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf.getAttribute('content');
+            }
+        } else {
+            console.warn('Axios no está disponible. Incluye su script antes de este bloque.');
+            return;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            clearFieldErrors(form);
+
+            const { formValido } = validarFormulario();
+
+            // Construir y loguear payload ANTES de limpiar
+            let fd = new FormData(form);
+            const payloadOriginal = {};
+            fd.forEach((v, k) => payloadOriginal[k] = v);
+            console.log("📨 Payload (original) a enviar:", payloadOriginal);
+
+            if (!formValido) {
+                console.warn("❌ Formulario inválido en cliente. Corrige los campos requeridos antes de enviar.");
+                return;
+            }
+
+            // 🔥 Limpia campos vacíos para “saltar” lo no enviado
+            fd = limpiarFormData(fd);
+
+            // Spoofing PUT tras limpiar (para no duplicar _method)
+            if (!fd.has('_method')) fd.append('_method', 'PUT');
+
+            // Log del payload definitivo
+            const payloadLimpio = {};
+            fd.forEach((v, k) => payloadLimpio[k] = (v instanceof File ? `(File:${v.name},${v.size}B)` : v));
+            console.log("📨 Payload (limpio) a enviar:", payloadLimpio);
+
+            // Estado loading en botón
+            const originalText = btnActualizar.textContent;
+            btnActualizar.disabled = true;
+            btnActualizar.textContent = 'Actualizando…';
+
+            try {
+                // Usa la action del form o define una por defecto
+                const url = form.getAttribute('action') || '/users/1';
+
+                const res = await axios.post(url, fd, { headers: { 'Accept': 'application/json' } });
+                console.log("✅ Respuesta OK del backend:", res.data);
+            } catch (error) {
+                if (error.response && error.response.status === 422) {
+                    // Campos que NO pasaron la validación/guardado en el controlador
+                    const errors = error.response.data?.errors || {};
+                    const camposConError = Object.keys(errors);
+
+                    console.error("❌ Errores de validación del backend:", errors);
+                    console.warn("🧩 Campos que NO pasaron al controlador:", camposConError);
+
+                    // Pintar errores junto a cada campo
+                    setFieldErrors(form, errors);
+
+                    // Resumen rápido
+                    alert('Campos con error: ' + (camposConError.join(', ') || '—'));
+                } else {
+                    console.error("⚠️ Error inesperado al enviar:", error);
+                    alert('Ocurrió un error inesperado al actualizar.');
+                }
+            } finally {
+                btnActualizar.disabled = false;
+                btnActualizar.textContent = originalText;
+            }
+        });
+    })();
 </script>
 
 </body>
