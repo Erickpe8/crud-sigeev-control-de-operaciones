@@ -159,7 +159,8 @@
                         'last_name' => 'Apellido',
                         'email' => 'Correo Electrónico',
                         'birthdate' => 'Fecha de Nacimiento',
-                        'document_number' => 'Número de Documento'
+                        'document_number' => 'Número de Documento',
+                        'phone' => 'Teléfono'
                     ];
                 @endphp
 
@@ -253,7 +254,7 @@
     const form = document.getElementById('formEditarUsuario');
     const btnActualizar = document.getElementById('btnActualizar');
 
-    const camposRequeridos = ['first_name', 'last_name', 'email', 'birthdate', 'document_number', 'gender_id', 'document_type_id', 'user_type_id'];
+    const camposRequeridos = ['first_name', 'last_name', 'email', 'birthdate', 'document_number', 'gender_id', 'document_type_id', 'user_type_id', 'phone'];
     const camposEstudiante = ['academic_program_id', 'institution_id'];
     const camposEmpresa = ['company_name', 'company_address'];
 
