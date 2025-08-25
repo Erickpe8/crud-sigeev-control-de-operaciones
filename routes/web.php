@@ -8,6 +8,8 @@ use App\Http\Controllers\web\ProfileEditController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
+use App\Http\Controllers\web\Dashboard\EventController;
+use App\Http\Controllers\web\Dashboard\SpeakerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,4 +108,14 @@ Route::middleware(['auth', 'role:admin|superadmin'])->group(function () {
         Route::get('/dashboard/user', [UserController::class, 'index'])
             ->name('dashboards.user');
     });
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('speakers', EventController::class)->only([]); // evita colisión si ya existía
+    Route::resource('events', SpeakerController::class)->only([]); // evita colisión si ya existía
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('speakers', SpeakerController::class)->names('speakers');
+    Route::resource('events', EventController::class)->names('events');
 });
