@@ -37,7 +37,7 @@ class UsersSeeder extends Seeder
                 'last_name' => 'Perez',
                 'email' => 'erick@fesc.edu.co',
                 'password' => Hash::make('Password123'),
-                'birthdate' => Carbon::createFromFormat('d/m/Y', '22/03/1992'),
+                'birthdate' => Carbon::createFromFormat('d/m/Y', '21/01/2006'),
                 'gender_id' => 1,
                 'document_type_id' => 1,
                 'user_type_id' => 4,
