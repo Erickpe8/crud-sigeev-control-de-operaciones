@@ -385,34 +385,50 @@
             btnActualizar.disabled = true;
             btnActualizar.textContent = 'Actualizando…';
 
-            try {
-                // Usa la action del form o define una por defecto
-                const url = form.getAttribute('action') || '/users/1';
+try {
+    // Usa la action del form o define una por defecto
+    const url = form.getAttribute('action') || '/users/1';
 
-                const res = await axios.post(url, fd, { headers: { 'Accept': 'application/json' } });
-                console.log("✅ Respuesta OK del backend:", res.data);
-            } catch (error) {
-                if (error.response && error.response.status === 422) {
-                    // Campos que NO pasaron la validación/guardado en el controlador
-                    const errors = error.response.data?.errors || {};
-                    const camposConError = Object.keys(errors);
+    const res = await axios.post(url, fd, { headers: { 'Accept': 'application/json' } });
+    console.log("✅ Respuesta OK del backend:", res.data);
 
-                    console.error("❌ Errores de validación del backend:", errors);
-                    console.warn("🧩 Campos que NO pasaron al controlador:", camposConError);
+} catch (error) {
+    if (error.response && error.response.status === 422) {
+        // Laravel devuelve { errors: { campo: [mensaje1, mensaje2...] } }
+        const errors = error.response.data?.errors || {};
+        const camposConError = Object.keys(errors);
 
-                    // Pintar errores junto a cada campo
-                    setFieldErrors(form, errors);
+        console.group("❌ Errores de validación del backend");
+        camposConError.forEach(campo => {
+            console.error(`Campo '${campo}' →`, errors[campo].join(' | '));
+        });
+        console.groupEnd();
 
-                    // Resumen rápido
-                    alert('Campos con error: ' + (camposConError.join(', ') || '—'));
-                } else {
-                    console.error("⚠️ Error inesperado al enviar:", error);
-                    alert('Ocurrió un error inesperado al actualizar.');
-                }
-            } finally {
-                btnActualizar.disabled = false;
-                btnActualizar.textContent = originalText;
-            }
+        // Aviso rápido en UI
+        alert(
+            "Los siguientes campos tienen problemas:\n" +
+            camposConError.map(c => `• ${c}: ${errors[c].join(' | ')}`).join('\n')
+        );
+
+        // Pintar errores junto a cada input (tu helper)
+        setFieldErrors(form, errors);
+
+    } else if (error.response && error.response.status === 500) {
+        // Cuando tu backend devuelve error inesperado con debug activo
+        const detalle = error.response.data?.error || 'Error interno';
+        const excepcion = error.response.data?.exception || 'Desconocida';
+
+        console.error("💥 Error 500 en el servidor:", excepcion, detalle);
+        alert(`Error interno en el servidor: ${excepcion} → ${detalle}`);
+    } else {
+        console.error("⚠️ Error inesperado al enviar:", error);
+        alert('Ocurrió un error inesperado al actualizar.');
+    }
+} finally {
+    btnActualizar.disabled = false;
+    btnActualizar.textContent = originalText;
+}
+
         });
     })();
 </script>

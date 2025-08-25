@@ -89,23 +89,24 @@ Route::middleware('auth')->group(function () {
      */
 
 
-    Route::middleware(['auth', 'role:admin|superadmin'])
+
+    Route::middleware(['web','auth','role:admin|superadmin'])
         ->prefix('profile')
         ->name('profile.')
         ->group(function () {
-
-            // Ruta para editar el perfil (recibiendo el usuario con binding)
+            // Editar
             Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
                 ->name('edit');
 
-            // Ruta para actualizar la información del perfil (recibiendo el usuario con binding)
-            Route::put('update/{user}', [ProfileEditController::class, 'update'])
+            // Actualizar (acepta POST y PUT al mismo endpoint)
+            Route::match(['POST','PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
                 ->name('update');
 
-            // Ruta para cancelar la edición y redirigir al perfil
+            // Cancelar
             Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
                 ->name('cancel');
         });
+
 
     /**
      * Rutas de Usuario estándar
