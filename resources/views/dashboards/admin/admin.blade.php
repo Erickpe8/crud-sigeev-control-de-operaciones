@@ -62,7 +62,7 @@
             <!-- Botón Registrar -->
             <div>
                 <a href="{{ route('panel.usuarios.crear') }}"
-                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
                     Registrar Un Nuevo Usuario
                 </a>
             </div>
@@ -214,12 +214,12 @@
                     <div class="mb-4">
                         <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
                         <input type="text" id="company_name" name="company_name"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     </div>
                     <div>
                         <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
                         <input type="text" id="company_address" name="company_address"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     </div>
                 </div>
             </div>
