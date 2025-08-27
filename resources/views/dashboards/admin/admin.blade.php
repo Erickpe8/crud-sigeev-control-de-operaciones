@@ -249,7 +249,7 @@
 
     function editarUsuario(id) {
         const user = usuarios.find(u => u.id === id);
-        if (!user) return alert('⚠️ Usuario no encontrado');
+        if (!user) return alert('Usuario no encontrado');
 
         document.getElementById('tablaUsuarios').classList.add('hidden');
         document.getElementById('formularioEdicion').classList.remove('hidden');
@@ -355,7 +355,7 @@
                 headers: { 'Accept': 'application/json' }
             });
 
-            alert('✅ Usuario actualizado correctamente');
+            alert('Usuario actualizado correctamente');
             location.reload();
 
         } catch (error) {
