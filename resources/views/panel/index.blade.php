@@ -194,52 +194,75 @@
             </div>
         </div>
     {{-- AQUI TERMINA LO DE MOSTRAR LOS MODULOS --}}
-
-        <script>
-        (function ensureDarkFromLocalStorage() {
-            if (localStorage.getItem('theme') === 'dark') {
+<script>
+    // Asegura el tema oscuro desde localStorage
+    (function ensureDarkFromLocalStorage() {
+        if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
-            }
-        })();
+        }
+    })();
 
-        (function sidebarToggle() {
-            const btn = document.getElementById('sidebarToggleBtn');
-            const aside = document.getElementById('logo-sidebar');
-            if (!btn || !aside) return;
-            btn.addEventListener('click', () => {
+    // Función para controlar el toggle del sidebar
+    (function sidebarToggle() {
+        const btn = document.getElementById('sidebarToggleBtn');
+        const aside = document.getElementById('logo-sidebar');
+        if (!btn || !aside) return;
+        btn.addEventListener('click', () => {
             const isHidden = aside.classList.contains('-translate-x-full');
             aside.classList.toggle('-translate-x-full', !isHidden);
+        });
+    })();
+
+    // Escuchar clicks fuera del menú para cerrarlo
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && !trigger.contains(e.target)) close();
+    });
+
+    // Escuchar la tecla "Escape" para cerrar
+    document.addEventListener('DOMContentLoaded', function () {
+        const menu = document.getElementById('logo-sidebar');  // El ID correcto del sidebar
+        const trigger = document.getElementById('sidebarToggleBtn');  // El ID correcto del botón de apertura
+
+        // Asegúrate de que los elementos existen antes de agregar el event listener
+        if (menu && trigger) {
+            trigger.addEventListener('click', () => {
+                // Alternar la clase para mostrar/ocultar el menú
+                menu.classList.toggle('-translate-x-full');  // Esta clase oculta o muestra el menú
             });
-        })();
 
-
-
+            // Escuchar clics fuera del menú para cerrarlo
             document.addEventListener('click', (e) => {
-                if (!menu.contains(e.target) && !trigger.contains(e.target)) close();
+                // Comprobar si el clic ocurrió fuera del menú y el botón de apertura
+                if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+                    menu.classList.add('-translate-x-full');  // Cierra el menú añadiendo la clase que lo oculta
+                }
             });
+        } else {
+            console.error("No se encontraron los elementos con los IDs proporcionados.");
+        }
+    });
 
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') close();
-            });
-        })();
 
-        (function quickFilter() {
-            const input = document.getElementById('moduleSearch');
-            const cards = Array.from(document.querySelectorAll('.module-card'));
+    // Filtro rápido de módulos
+    (function quickFilter() {
+        const input = document.getElementById('moduleSearch');
+        const cards = Array.from(document.querySelectorAll('.module-card'));
 
-            if (!input || !cards.length) return;
+        if (!input || !cards.length) return;
 
-            input.addEventListener('input', () => {
+        input.addEventListener('input', () => {
             const q = input.value.trim().toLowerCase();
             cards.forEach(card => {
                 const title = card.getAttribute('data-title') || '';
-                const desc  = card.getAttribute('data-desc')  || '';
+                const desc = card.getAttribute('data-desc') || '';
                 const match = !q || title.includes(q) || desc.includes(q);
                 card.classList.toggle('hidden', !match);
             });
-            });
-        })();
-        </script>
-        <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js"></script>
+        });
+    })();
+</script>
+
+<script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js"></script>
+
     </body>
 </html>
