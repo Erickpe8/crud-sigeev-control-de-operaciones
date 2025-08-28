@@ -15,6 +15,54 @@
 @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
+@section('content')
+    <div class="container mx-auto p-4">
+        <!-- Mostrar alertas de éxito o error -->
+        @if (session('success'))
+            <div class="flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 dark:border-green-800" role="alert">
+                <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                </svg>
+                <div>
+                    <span class="font-medium">Success!</span> {{ session('success') }}
+                </div>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="flex items-center p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800" role="alert">
+                <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                </svg>
+                <div>
+                    <span class="font-medium">Error!</span> Please check the following issues:
+                    <ul class="list-disc pl-5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+
+        <!-- Formulario de edición -->
+        <form method="POST" action="{{ route('profile.update', $user->id) }}" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <!-- Aquí van los campos del formulario -->
+            <div class="mt-4">
+                <label for="first_name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                <input type="text" id="first_name" name="first_name" value="{{ old('first_name', $user->first_name) }}" class="w-full border border-gray-300 rounded-lg p-2" required>
+            </div>
+
+            <!-- Agrega los demás campos aquí... -->
+
+            <button type="submit" class="mt-4 px-6 py-2 text-white bg-blue-600 rounded-lg">Guardar cambios</button>
+        </form>
+    </div>
+@endsection
+
 <form id="editUserForm" class="w-[720px] bg-white rounded-lg shadow-lg p-6 relative" action="{{ route('profile.update', auth()->user()->id) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -186,7 +234,7 @@
 
     <!-- Botones -->
     <div class="flex gap-4 mt-6">
-        <button type="submit" id="btnActualizar" disabled
+        <button type="submit" id="btnActualizar" onclick="disableButton()"
                 class="bg-[#ff0000] text-white px-6 py-2 rounded w-full opacity-50 cursor-not-allowed">
             Actualizar Información
         </button>
@@ -428,6 +476,13 @@ try {
     btnActualizar.disabled = false;
     btnActualizar.textContent = originalText;
 }
+    function disableButton() {
+        var btn = document.getElementById('btnActualizar');
+        btn.disabled = true;  // Desactiva el botón para evitar clics múltiples
+        btn.innerHTML = "Actualizando...";  // Cambia el texto para que el usuario vea que está en proceso
+        btn.classList.add('opacity-75');  // Cambia la opacidad para indicar que el botón está desactivado
+        btn.classList.remove('cursor-not-allowed');  // Cambia el cursor para mostrar que ya no es clickeable
+    }
 
         });
     })();
