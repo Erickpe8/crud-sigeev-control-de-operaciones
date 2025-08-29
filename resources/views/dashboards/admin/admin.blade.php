@@ -62,7 +62,7 @@
             <!-- Botón Registrar -->
             <div>
                 <a href="{{ route('panel.usuarios.crear') }}"
-                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
                     Registrar Un Nuevo Usuario
                 </a>
             </div>
@@ -127,17 +127,6 @@
     @endforelse
 </tbody>
 
-{{-- Paginación (si $users es paginator) --}}
-@if(isset($users) && method_exists($users, 'links'))
-    <tfoot>
-        <tr>
-            <td colspan="4" class="px-4 py-3">
-                {{ $users->links() }}
-            </td>
-        </tr>
-    </tfoot>
-@endif
-
         </table>
         <div class="mt-6 flex justify-center">
             {{ $users->links('pagination::tailwind') }}
@@ -159,7 +148,8 @@
                         'last_name' => 'Apellido',
                         'email' => 'Correo Electrónico',
                         'birthdate' => 'Fecha de Nacimiento',
-                        'document_number' => 'Número de Documento'
+                        'document_number' => 'Número de Documento',
+                        'phone' => 'Teléfono'
                     ];
                 @endphp
 
@@ -224,12 +214,12 @@
                     <div class="mb-4">
                         <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
                         <input type="text" id="company_name" name="company_name"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     </div>
                     <div>
                         <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
                         <input type="text" id="company_address" name="company_address"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     </div>
                 </div>
             </div>
@@ -253,13 +243,13 @@
     const form = document.getElementById('formEditarUsuario');
     const btnActualizar = document.getElementById('btnActualizar');
 
-    const camposRequeridos = ['first_name', 'last_name', 'email', 'birthdate', 'document_number', 'gender_id', 'document_type_id', 'user_type_id'];
+    const camposRequeridos = ['first_name', 'last_name', 'email', 'birthdate', 'document_number', 'gender_id', 'document_type_id', 'user_type_id', 'phone'];
     const camposEstudiante = ['academic_program_id', 'institution_id'];
     const camposEmpresa = ['company_name', 'company_address'];
 
     function editarUsuario(id) {
         const user = usuarios.find(u => u.id === id);
-        if (!user) return alert('⚠️ Usuario no encontrado');
+        if (!user) return alert('Usuario no encontrado');
 
         document.getElementById('tablaUsuarios').classList.add('hidden');
         document.getElementById('formularioEdicion').classList.remove('hidden');
@@ -365,7 +355,7 @@
                 headers: { 'Accept': 'application/json' }
             });
 
-            alert('✅ Usuario actualizado correctamente');
+            alert('Usuario actualizado correctamente');
             location.reload();
 
         } catch (error) {

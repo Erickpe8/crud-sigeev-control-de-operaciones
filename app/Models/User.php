@@ -41,6 +41,7 @@ class User extends Authenticatable
         'gender_id',
         'document_type_id',
         'document_number',
+        'phone',
         'user_type_id',
         'academic_program_id',
         'institution_id',
