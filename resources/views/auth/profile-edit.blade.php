@@ -302,6 +302,7 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
         // Ejecutar al cargar la página para mostrar/hide los campos reactivos según el tipo
         document.getElementById('user_type_id').dispatchEvent(new Event('change'));
 
+        // Función para validar el formulario
         function validarFormulario() {
             let formValido = true;
             let camposEstado = [];
@@ -309,11 +310,22 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
             formInputs.forEach(input => {
                 let valido = true;
 
+                // Validar si el campo es requerido y no está vacío
                 if (input.required && !input.value.trim()) {
                     valido = false;
                     formValido = false;
                 }
 
+                // Verificar si los campos de contraseña coinciden
+                if (input.name === 'password') {
+                    const passwordConfirmation = document.getElementById('password_confirmation');
+                    if (passwordConfirmation && passwordConfirmation.value.trim() !== input.value.trim()) {
+                        valido = false;
+                        formValido = false;
+                    }
+                }
+
+                // Almacenar el estado de cada campo
                 camposEstado.push({
                     name: input.name,
                     value: input.value,
@@ -322,9 +334,11 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
                 });
             });
 
-            console.log("📝 Estado de los campos:", camposEstado);
+            // Mostrar los resultados en la consola como una tabla
+            console.table(camposEstado);
             console.log("✅ ¿Formulario válido?:", formValido);
 
+            // Activar/desactivar el botón de acuerdo con la validez
             btnActualizar.disabled = !formValido;
             btnActualizar.classList.toggle('opacity-50', !formValido);
             btnActualizar.classList.toggle('cursor-not-allowed', !formValido);
@@ -332,12 +346,35 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
             return { formValido, camposEstado };
         }
 
+        // Función para limpiar los campos vacíos antes de enviar
+        function limpiarCamposVacios() {
+            let payload = {};
+
+            formInputs.forEach(input => {
+                // Solo agregar el campo si no está vacío
+                if (input.value.trim() !== "") {
+                    // Solo agregar el campo de contraseña si ambos campos (password y password_confirmation) no están vacíos
+                    if (input.name === 'password' && input.value.trim() !== '' && document.getElementById('password_confirmation').value.trim() !== '') {
+                        payload['password'] = input.value;
+                    } else {
+                        payload[input.name] = input.value;
+                    }
+                }
+            });
+
+            // Ahora 'payload' tiene solo los campos válidos
+            return payload;
+        }
+
+        // Añadir los eventos para validar el formulario
         formInputs.forEach(input => {
             input.addEventListener('input', validarFormulario);
             input.addEventListener('change', validarFormulario);
         });
 
-        validarFormulario(); // Validación inicial
+        // Llamada inicial para validar el formulario al cargar
+        validarFormulario();
+
 
         // ====== EXTENSIÓN: try/catch para saber qué datos NO pasan al controlador ======
         // Utilidades mínimas para pintar errores de validación del backend (422)
@@ -495,7 +532,7 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
                     btnActualizar.disabled = false;
                     btnActualizar.textContent = originalText;
                 }
-                
+
                 function disableButton() {
                     var btn = document.getElementById('btnActualizar');
                     btn.disabled = true;  // Desactiva el botón para evitar clics múltiples

@@ -90,25 +90,26 @@ Route::middleware('auth')->group(function () {
      * Rutas para editar mi propio perfil (Admin y SuperAdmin)
      */
 
+    Route::middleware(['web', 'auth', 'role:admin|superadmin'])
+    ->prefix('profile')
+    ->name('profile.')
+    ->group(function () {
+    // Editar perfil
+    Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
+    ->name('edit');
 
+    // Actualizar perfil
+    Route::match(['POST', 'PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
+    ->name('update');
 
-    Route::middleware(['web','auth','role:admin|superadmin'])
-        ->prefix('profile')
-        ->name('profile.')
-        ->group(function () {
-            // Editar
-            Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
-                ->name('edit');
+    // Actualizar contraseña
+    Route::match(['POST', 'PUT'], 'update-password/{user}', [ProfileEditController::class, 'updatePassword'])
+    ->name('update-password'); // Nueva ruta para actualizar la contraseña
 
-            // Actualizar (acepta POST y PUT al mismo endpoint)
-            Route::match(['POST','PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
-                ->name('update');
-
-            // Cancelar
-            Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
-                ->name('cancel');
-        });
-
+    // Cancelar
+    Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
+    ->name('cancel');
+    });
 
     /**
      * Rutas de Usuario estándar
