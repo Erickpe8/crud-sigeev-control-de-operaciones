@@ -62,7 +62,10 @@
                         aria-haspopup="true"
                         data-dropdown-toggle="dropdown-user">
                         <span class="sr-only">Abrir menú de usuario</span>
-                        <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo">
+                            <img class="w-8 h-8 rounded-full object-cover" src="{{ $user->photo_url
+                                ? asset('storage/' . $user->photo_url)
+                                : asset('images/default-avatar.png') }}"
+                                onerror="this.onerror=null;this.src='{{ asset('images/default-avatar.png') }}';" alt="Foto de perfil">
                     </button>
                 </div>
 

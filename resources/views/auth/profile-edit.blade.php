@@ -65,8 +65,6 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
                         class="w-full border border-gray-300 rounded-lg p-2" required>
                 </div>
 
-                <!-- Agrega los demás campos aquí... -->
-
                 <button type="submit" class="mt-4 px-6 py-2 text-white bg-blue-600 rounded-lg">Guardar cambios</button>
             </form>
         </div>
