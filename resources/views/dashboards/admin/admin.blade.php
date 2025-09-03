@@ -1,402 +1,114 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Panel de Administración</title>
-    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-<body class="bg-gray-100 p-6">
+{{-- resources/views/users/index.blade.php --}}
+@extends('layouts.panel')
 
-<div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios</h1>
+@push('head')
+    {{-- simple-datatables (CSS) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
+@endpush
 
-    <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded">
-        <p class="text-gray-700 leading-relaxed">
-            Bienvenido, Administrador. Desde este panel tienes acceso completo para visualizar, editar, registrar y eliminar usuarios dentro del sistema, con excepción de los usuarios con rol <strong>Superadministrador</strong>, cuya gestión está reservada por razones de seguridad.
-            <br><br>
-            Asegúrate de verificar cuidadosamente la información antes de aplicar cambios, ya que estos pueden afectar el acceso y los permisos de los usuarios.
-            <br><br>
-            Si necesitas realizar acciones avanzadas, como la gestión de roles especiales o restaurar cuentas eliminadas, por favor comunícate con el equipo de soporte técnico a través de los canales oficiales.
-        </p>
-        <br><br>
+@section('content')
+    <div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios</h1>
 
-        {{-- Buscador + Registrar + Logout --}}
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <!-- Buscador -->
-            <form method="GET" class="flex-1">
-                <div class="relative w-full">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1010 18a7.5 7.5 0 006.65-6.85z"/>
-                        </svg>
-                    </div>
+        {{-- Mensaje de bienvenida --}}
+        <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded mb-6">
+            <p class="text-gray-700 leading-relaxed">
+                Bienvenido, Administrador. Desde este panel tienes acceso completo para visualizar, editar, registrar y
+                eliminar usuarios dentro del sistema, con excepción de los usuarios con rol
+                <strong>Superadministrador</strong>, cuya gestión está reservada por razones de seguridad.
+                <br><br>
+                Asegúrate de verificar cuidadosamente la información antes de aplicar cambios, ya que estos pueden afectar
+                el acceso y los permisos de los usuarios.
+                <br><br>
+                Si necesitas realizar acciones avanzadas, como la gestión de roles especiales o restaurar cuentas
+                eliminadas, por favor comunícate con el equipo de soporte técnico a través de los canales oficiales.
+            </p>
+        </div>
 
-                    <input
-                        type="search" name="search" id="search" value="{{ request('search') }}"
-                        placeholder="Buscar por nombre o correo..."
-                        class="block w-full p-4 pl-10
-                            pr-40 md:pr-56  {{-- espacio para 2 botones --}}
-                            text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
-                            focus:ring-blue-500 focus:border-blue-500">
+        {{-- Tabla de usuarios --}}
+        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+            <table id="usuarios-table" class="min-w-full text-sm text-left">
+                <thead class="bg-gray-100 border-b">
+                    <tr class="text-gray-600 uppercase text-xs tracking-wider">
+                        <th class="px-4 py-3">Nombre</th>
+                        <th class="px-4 py-3">Correo</th>
+                        <th class="px-4 py-3">Rol</th>
+                        <th class="px-4 py-3 text-center">Acciones</th>
+                    </tr>
+                </thead>
 
-                    <!-- Grupo de botones dentro del input -->
-                    <div class="absolute right-2.5 bottom-2.5 flex gap-2">
-                        <button type="button" id="btnClearSearch"
-                                class="bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg text-sm px-4 py-2
-                                    focus:outline-none focus:ring-4 focus:ring-gray-300">
-                            Limpiar
-                        </button>
-                        <button type="submit"
-                                class="bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-4 py-2
-                                    focus:outline-none focus:ring-4 focus:ring-blue-300">
-                            Buscar
-                        </button>
-                    </div>
-                </div>
-            </form>
+                <tbody class="divide-y divide-gray-200">
+                    @forelse(($users ?? collect()) as $usuario)
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-4 py-2">
+                                                        {{ $usuario->first_name }} {{ $usuario->last_name }}
+                                                    </td>
+                                                    <td class="px-4 py-2">
+                                                        {{ $usuario->email }}
+                                                    </td>
+                                                    <td class="px-4 py-2">
+                                                        {{ $usuario->roles->pluck('name')->implode(', ') ?: 'sin rol' }}
+                                                    </td>
+                        <td class="px-4 py-2">
+                            <div class="flex items-center justify-center gap-4">
+                                @can('users.manage')
+                                    {{-- Botón Editar --}}
+                                    <a href="{{ route('usuarios.show', $usuario) }}" class="px-4 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md
+                                                  hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400
+                                                  focus:ring-offset-1 transition flex-none">
+                                        Editar
+                                    </a>
+                                @endcan
 
-            <!-- Botón Registrar -->
-            <div>
-                <a href="{{ route('panel.usuarios.crear') }}"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
-                    Registrar Un Nuevo Usuario
-                </a>
-            </div>
+                                @php $isSuperAdmin = $usuario->hasRole('superadmin'); @endphp
+                                @if(!$isSuperAdmin && auth()->user()->can('users.delete'))
+                                    {{-- Botón Eliminar --}}
+                                    <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}"
+                                        onsubmit="return confirm('¿Eliminar este usuario?')" class="flex-none">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md
+                                                           hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400
+                                                           focus:ring-offset-1 transition">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </td>
 
-            <!-- Botón Cerrar sesión -->
-            <div>
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow block text-center">
-                        Cerrar Sesión
-                    </button>
-                </form>
-            </div>
+                                                </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-4 py-6 text-center text-gray-500">
+                                No hay usuarios para mostrar.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
+@endsection
 
-    {{-- Tabla de usuarios --}}
-    <section id="tablaUsuarios">
-        <table class="min-w-full table-auto text-sm text-left border-collapse border">
-            <thead class="bg-gray-100 border-b">
-            <tr class="text-gray-600 uppercase text-xs tracking-wider">
-                <th class="px-4 py-3">Nombre</th>
-                <th class="px-4 py-3">Correo</th>
-                <th class="px-4 py-3">Rol</th>
-                <th class="px-4 py-3 text-center">Acciones</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="tablaCuerpoUsuarios">
-    @forelse(($users ?? collect()) as $usuario)
-        <tr class="hover:bg-gray-50 transition fila-usuario">
-            <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
-            <td class="px-4 py-2">{{ $usuario->email }}</td>
-            <td class="px-4 py-2">{{ $usuario->roles->pluck('name')->implode(', ') ?: 'sin rol' }}</td>
-            <td class="px-4 py-2 text-center flex gap-2 justify-center items-center">
-                <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                        onclick="editarUsuario({{ $usuario->id }})">
-                    Editar
-                </button>
-            @php
-                $isSuperAdmin = $usuario->hasRole('superadmin');
-            @endphp
+@push('scripts')
+    {{-- simple-datatables (JS) --}}
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const el = document.getElementById('usuarios-table');
+            if (!el || typeof simpleDatatables === 'undefined') return;
 
-            @if(!$isSuperAdmin)
-                <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="inline-block">
-                    @csrf
-                    @method('DELETE')
-                    <button onclick="return confirm('¿Eliminar este usuario?')"
-                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
-                        Eliminar
-                    </button>
-                </form>
-            @endif
-            </td>
-        </tr>
-    @empty
-        <tr>
-            <td colspan="4" class="px-4 py-6 text-center text-gray-500">
-                No hay usuarios para mostrar.
-            </td>
-        </tr>
-    @endforelse
-</tbody>
-
-        </table>
-        <div class="mt-6 flex justify-center">
-            {{ $users->links('pagination::tailwind') }}
-        </div>
-    </section>
-
-    {{-- Formulario de edición --}}
-    <section id="formularioEdicion" class="hidden mt-10">
-        <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
-
-        <form id="formEditarUsuario" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                @php
-                    $camposTexto = [
-                        'first_name' => 'Primer Nombre',
-                        'last_name' => 'Apellido',
-                        'email' => 'Correo Electrónico',
-                        'birthdate' => 'Fecha de Nacimiento',
-                        'document_number' => 'Número de Documento',
-                        'phone' => 'Teléfono'
-                    ];
-                @endphp
-
-                @foreach ($camposTexto as $id => $label)
-                    <div>
-                        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
-                        <input
-                            type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
-                            id="{{ $id }}"
-                            name="{{ $id }}"
-                            value=""
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-                @endforeach
-
-                @foreach ([
-                    'gender_id' => $genders,
-                    'document_type_id' => $documentTypes,
-                    'user_type_id' => $userTypes
-                ] as $id => $collection)
-                    <div>
-                        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
-                            {{ ucwords(str_replace('_', ' ', $id)) }}
-                        </label>
-                        <select id="{{ $id }}" name="{{ $id }}"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                onchange="toggleCamposEspeciales()">
-                            <option value="">Seleccione</option>
-                            @foreach ($collection as $item)
-                                <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endforeach
-
-                {{-- Campos adicionales dinámicos --}}
-                <div id="academic_section" class="col-span-2 hidden">
-                    <div class="mb-4">
-                        <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
-                        <select id="academic_program_id" name="academic_program_id"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Seleccione</option>
-                            @foreach ($academicPrograms as $program)
-                                <option value="{{ $program->id }}">{{ $program->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
-                        <select id="institution_id" name="institution_id"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Seleccione</option>
-                            @foreach ($institutions as $inst)
-                                <option value="{{ $inst->id }}">{{ $inst->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div id="empresa_section" class="col-span-2 hidden">
-                    <div class="mb-4">
-                        <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
-                        <input type="text" id="company_name" name="company_name"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
-                        <input type="text" id="company_address" name="company_address"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-4">
-                <button type="submit" id="btnActualizar" disabled
-                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
-                    Actualizar
-                </button>
-
-                <button type="button" onclick="cancelarEdicion()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
-                    Cancelar
-                </button>
-            </div>
-        </form>
-    </section>
-</div>
-
-<script>
-    const usuarios = @json($users->toArray()['data'] ?? []);
-    const form = document.getElementById('formEditarUsuario');
-    const btnActualizar = document.getElementById('btnActualizar');
-
-    const camposRequeridos = ['first_name', 'last_name', 'email', 'birthdate', 'document_number', 'gender_id', 'document_type_id', 'user_type_id', 'phone'];
-    const camposEstudiante = ['academic_program_id', 'institution_id'];
-    const camposEmpresa = ['company_name', 'company_address'];
-
-    function editarUsuario(id) {
-        const user = usuarios.find(u => u.id === id);
-        if (!user) return alert('Usuario no encontrado');
-
-        document.getElementById('tablaUsuarios').classList.add('hidden');
-        document.getElementById('formularioEdicion').classList.remove('hidden');
-        document.getElementById('mensajeBienvenida')?.classList.add('hidden');
-
-        form.action = `/usuarios/${id}`;
-
-        const fields = [...camposRequeridos, ...camposEstudiante, ...camposEmpresa];
-        fields.forEach(field => {
-            if (form[field]) {
-                let value = user[field] ?? '';
-                if (field === 'birthdate' && value) {
-                    value = new Date(value).toISOString().split('T')[0];
+            new simpleDatatables.DataTable(el, {
+                perPage: 10,
+                searchable: true,
+                fixedHeight: false,
+                labels: {
+                    perPage: '{select} por página',
+                    noRows: 'No se encontraron registros',
+                    info: 'Mostrando {start}–{end} de {rows}'
                 }
-                form[field].value = value;
-            }
+            });
         });
-
-        toggleCamposEspeciales();
-        validarFormulario();
-    }
-
-    function cancelarEdicion() {
-        form.reset();
-        toggleCamposEspeciales();
-        validarFormulario();
-        document.getElementById('formularioEdicion').classList.add('hidden');
-        document.getElementById('tablaUsuarios').classList.remove('hidden');
-        document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
-    }
-
-    function toggleCamposEspeciales() {
-        const tipo = parseInt(form['user_type_id'].value);
-        const academic = document.getElementById('academic_section');
-        const empresa = document.getElementById('empresa_section');
-
-        academic.classList.toggle('hidden', tipo !== 4);
-        empresa.classList.toggle('hidden', !(tipo === 2 || tipo === 3));
-
-        if (tipo !== 4) {
-            form['academic_program_id'].value = '';
-            form['institution_id'].value = '';
-        }
-        if (!(tipo === 2 || tipo === 3)) {
-            form['company_name'].value = '';
-            form['company_address'].value = '';
-        }
-
-        validarFormulario();
-    }
-
-    function validarFormulario() {
-        let esValido = true;
-
-        camposRequeridos.forEach(id => {
-            const el = form[id];
-            if (!el || el.value.trim() === '') {
-                esValido = false;
-            }
-        });
-
-        const tipo = parseInt(form['user_type_id'].value);
-
-        if (tipo === 4) {
-            camposEstudiante.forEach(id => {
-                const el = form[id];
-                if (!el || el.value.trim() === '') {
-                    esValido = false;
-                }
-            });
-        }
-
-        if (tipo === 2 || tipo === 3) {
-            camposEmpresa.forEach(id => {
-                const el = form[id];
-                if (!el || el.value.trim() === '') {
-                    esValido = false;
-                }
-            });
-        }
-
-        btnActualizar.disabled = !esValido;
-        btnActualizar.classList.toggle('opacity-50', !esValido);
-        btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
-    }
-
-    form.querySelectorAll('input, select').forEach(el => {
-        el.addEventListener('input', validarFormulario);
-        el.addEventListener('change', validarFormulario);
-    });
-
-    document.getElementById('user_type_id').addEventListener('change', toggleCamposEspeciales);
-
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(form);
-        formData.append('_method', 'PUT');
-        formData.set('accepted_terms', 1);
-
-        try {
-            const response = await axios.post(form.action, formData, {
-                headers: { 'Accept': 'application/json' }
-            });
-
-            alert('Usuario actualizado correctamente');
-            location.reload();
-
-        } catch (error) {
-            if (error.response && error.response.status === 422) {
-                const errors = error.response.data.errors;
-                let mensaje = 'Corrige los siguientes errores:\n';
-                for (const campo in errors) {
-                    mensaje += `- ${errors[campo].join(', ')}\n`;
-                }
-                alert(mensaje);
-            } else {
-                alert('❌ Error al actualizar el usuario.');
-            }
-        }
-    });
-    document.getElementById('btnClearSearch')?.addEventListener('click', function () {
-    const searchInput = document.getElementById('search');
-    searchInput.value = '';
-
-    // Frontend: mostrar todas las filas
-    document.querySelectorAll('.fila-usuario').forEach(fila => fila.style.display = '');
-
-    // Backend: recargar sin query params (opcional, útil si usas paginación/consulta)
-    window.location.href = window.location.pathname;
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-    // Inyecta CSS para ocultar la "X" del input search en navegadores Webkit
-    const style = document.createElement('style');
-    style.innerHTML = `
-        input[type="search"]::-webkit-search-cancel-button {
-            -webkit-appearance: none;
-            appearance: none;
-        }
-    `;
-    document.head.appendChild(style);
-    });
-
-
-    validarFormulario();
-</script>
-
-</body>
-</html>
+    </script>
+@endpush
