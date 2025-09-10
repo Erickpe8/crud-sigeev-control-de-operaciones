@@ -3,9 +3,17 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\web\CentralPanelController;
+use App\Http\Controllers\web\ProfileEditController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
+use App\Http\Controllers\web\Dashboard\EventController;
+use App\Http\Controllers\web\Dashboard\SpeakerController;
+use Illuminate\Support\Facades\DB;
+use App\Models\User;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -13,71 +21,125 @@ use App\Http\Controllers\web\Dashboard\UserController;
 |--------------------------------------------------------------------------
 */
 
-// Rutas públicas
-Route::get('/', function () {
-    return redirect()->route('login');
-});
-
-Route::view('/login', 'auth.login')->name('login');
-Route::view('/register', 'auth.register')->name('register');
+// Página de términos (pública)
 Route::view('/terminosycondiciones', 'terminosycondiciones')->name('terminos');
 
-// Autenticación
-Route::post('/login', [LoginController::class, 'login'])->name('login.perform');
+/**
+ * Invitados (no autenticados)
+ */
+Route::middleware('guest')->group(function () {
+    Route::get('/', fn() => redirect()->route('login'))->name('root');
 
-// Cierre de sesión
-Route::post('/logout', function () {
-    Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-    return redirect()->route('login');
-})->name('logout');
+    Route::view('/login', 'auth.login')->name('login');
+    Route::view('/register', 'auth.register')->name('register');
 
-// Rutas protegidas por autenticación
-Route::middleware(['auth'])->group(function () {
+    Route::post('/login', [LoginController::class, 'login'])->name('login.perform');
+});
 
-    // Super Admin
+/**
+ * Autenticados
+ */
+Route::middleware('auth')->group(function () {
+
+    // Si alguien intenta ir a / o /home, lo enviamos al panel
+    Route::get('/home', fn () => redirect()->route('panel'))->name('home');
+    Route::get('/', fn () => redirect()->route('panel'))->withoutMiddleware('guest');
+
+    // Panel central (nuevo)
+    Route::get('/panel', [CentralPanelController::class, 'index'])->name('panel');
+
+    // Logout
+    Route::post('/logout', function () {
+        Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        return redirect()->route('login');
+    })->name('logout');
+
+    /**
+     * Rutas de Super Admin
+     */
     Route::middleware('role:superadmin')->group(function () {
         Route::get('/dashboard/superadmin', [SuperAdminController::class, 'index'])
             ->name('dashboards.superadmin');
 
-    // Ruta para actualizar usuarios (EDITAR)
-    Route::put('/superadmin/usuarios/{user}', [SuperAdminController::class, 'update'])
-        ->name('superadmin.usuarios.update');
+        Route::put('/superadmin/usuarios/{user}', [SuperAdminController::class, 'update'])
+            ->name('superadmin.usuarios.update');
 
-    // Ruta para eliminar usuarios (ELIMINAR)
-    Route::delete('/superadmin/usuarios/{user}', [SuperAdminController::class, 'destroy'])
-        ->name('superadmin.usuarios.destroy');
-        
+        Route::delete('/superadmin/usuarios/{user}', [SuperAdminController::class, 'destroy'])
+            ->name('superadmin.usuarios.destroy');
 
-    // Ruta para mostrar un usuario específico (GET)
-    Route::get('/superadmin/usuarios/{user}', [SuperAdminController::class, 'show'])
-        ->name('superadmin.usuarios.show');
+        Route::get('/superadmin/usuarios/{user}', [SuperAdminController::class, 'show'])
+            ->name('superadmin.usuarios.show');
     });
 
-
-    // Admin
+    /**
+     * Rutas de Admin
+     */
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard/admin', [AdminController::class, 'index'])
             ->name('dashboards.admin');
 
-        // Ruta para actualizar usuarios (EDITAR)
         Route::put('/usuarios/{user}', [AdminController::class, 'update'])
             ->name('usuarios.update');
 
-        // Ruta para eliminar usuarios (ELIMINAR)
         Route::delete('/usuarios/{user}', [AdminController::class, 'destroy'])
             ->name('usuarios.destroy');
 
-        // Ruta para mostrar un usuario específico (GET)
         Route::get('/usuarios/{user}', [UserController::class, 'show'])
             ->name('usuarios.show');
     });
 
+    /**
+     * Rutas para editar mi propio perfil (Admin y SuperAdmin)
+     */
 
-    // Usuario estándar
+    Route::middleware(['web', 'auth', 'role:admin|superadmin'])
+    ->prefix('profile')
+    ->name('profile.')
+    ->group(function () {
+    // Editar perfil
+    Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
+    ->name('edit');
+
+    // Actualizar perfil
+    Route::match(['POST', 'PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
+    ->name('update');
+
+    // Actualizar contraseña
+    Route::match(['POST', 'PUT'], 'update-password/{user}', [ProfileEditController::class, 'updatePassword'])
+    ->name('update-password'); // Nueva ruta para actualizar la contraseña
+
+    // Cancelar
+    Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
+    ->name('cancel');
+    });
+
+    /**
+     * Rutas de Usuario estándar
+     */
     Route::middleware('role:user')->group(function () {
         Route::get('/dashboard/user', [UserController::class, 'index'])
             ->name('dashboards.user');
     });
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('speakers', EventController::class)->only([]); // evita colisión si ya existía
+    Route::resource('events', SpeakerController::class)->only([]); // evita colisión si ya existía
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('speakers', SpeakerController::class)->names('speakers');
+    Route::resource('events', EventController::class)->names('events');
+});
+
+Route::get('/debug/db', function () {
+return [
+'connection' => config('database.default'),
+'db_name' => DB::connection()->getDatabaseName(),
+'driver' => DB::connection()->getDriverName(),
+'users_count'=> User::count(),
+'last_user' => optional(User::query()->latest('id')->first())->only(['id','email','created_at']),
+];
+})->middleware('auth');

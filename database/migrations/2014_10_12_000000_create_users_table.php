@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('uuid')->unique();
             $table->string('first_name'); // Nombres
-            $table->string('last_name'); //apellidos
-            $table->string('email')->unique(); //email
-            $table->date('birthdate'); //fecha de cumpleaños
+            $table->string('last_name');  // Apellidos
+            $table->string('email')->unique(); // Email
+            $table->date('birthdate'); // Fecha de nacimiento
 
             // Foto de perfil
             $table->string('profile_photo')->nullable();
@@ -30,13 +30,14 @@ return new class extends Migration
 
             // Documentación
             $table->string('document_number')->unique(); // Número de documento
-        
-            // Institución institucional
-            $table->foreignId('institution_id')->nullable()->constrained();  
+
+            // Institución
+            $table->foreignId('institution_id')->nullable()->constrained();
 
             // Información empresarial
-            $table->string('company_name')->nullable(); // Nombre de la compañía
-            $table->text('company_address')->nullable(); // Dirección de la compañía
+            $table->string('company_name')->nullable();    // Nombre de la compañía
+            $table->text('company_address')->nullable();   // Dirección de la compañía
+            $table->string('phone', 20)->nullable();       // Teléfono
 
             $table->boolean('status')->default(true); // Estado del usuario (activo/inactivo)
 
