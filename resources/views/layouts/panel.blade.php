@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Panel Central' }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     @vite('resources/css/app.css')
     <style>
         html,
@@ -29,7 +30,18 @@
     <x-navbar :user="$user ?? auth()->user()" :brand="$brand ?? 'Panel Central'" />
 
     {{-- ASIDE --}}
-    <x-sidebar :items="$sidebarItems ?? []" id="logo-sidebar" />
+    @php
+        use Illuminate\Support\Facades\Auth;
+        use App\Http\Controllers\web\CentralPanelController as CPC;
+
+        // Si el controlador YA pasó $sidebarItems lo usamos; si no, lo calculamos aquí si existe el método.
+        $user = $user ?? Auth::user();
+        $__sidebar = $sidebarItems
+            ?? (method_exists(CPC::class, 'sidebarItems') ? CPC::sidebarItems($user) : []);
+    @endphp
+
+    <x-sidebar :items="$__sidebar" id="logo-sidebar" />
+
 
     {{-- CONTENIDO --}}
     <div class="p-4 sm:ml-64">
@@ -41,7 +53,9 @@
     {{-- JS mínimo y accesible --}}
     <script>
         (function ensureDarkFromLocalStorage() {
-            if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
         })();
 
         (function sidebarToggle() {

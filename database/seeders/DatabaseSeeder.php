@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             UsersSeeder::class,
         ]);
 
-        User::factory()->count(1000)->create()->each(function ($user) {
+        User::factory()->count(10000)->create()->each(function ($user) {
             if ($user->user_type_id === 1) {
                 $user->assignRole('superadmin');
             } elseif ($user->user_type_id === 4) {
