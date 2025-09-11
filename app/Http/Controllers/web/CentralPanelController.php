@@ -51,15 +51,18 @@ class CentralPanelController extends Controller
         return [
             // === SOLO SIDEBAR: Panel principal ===
             [
-                'key'         => 'panel_main',
-                'title'       => 'Panel principal',
+                'key' => 'panel_main',
+                'title' => 'Panel principal',
                 'description' => 'Resumen general y tarjetas del sistema.',
-                'permission'  => null,
-                'roles'       => ['admin', 'superadmin'],
-                'route'       => 'panel',
-                'icon'        => '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21"><path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/><path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/></svg>',
-                'active'      => ['panel', 'panel.*'],
-                'sidebar_only'=> true, // <- clave para no mostrarlo como tarjeta
+                'permission' => null,
+                'roles' => ['admin', 'superadmin'],
+                'route' => 'panel',
+                'icon' => '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" role="img">
+                    <path fill="#E10600"
+                        d="M12 17.65q.2 0 .363-.062t.312-.188q.8-.725 1.525-1.425t1.263-1.375t.862-1.312t.325-1.238q0-1.1-.75-1.825T14.1 9.5q-.65 0-1.187.263T12 10.45q-.375-.425-.937-.687T9.9 9.5q-1.05 0-1.8.725t-.75 1.825q0 .6.325 1.238t.863 1.312T9.8 15.975t1.525 1.425q.15.125.313.188t.362.062M6 21q-.825 0-1.412-.587T4 19v-7.375L3 12.4q-.35.25-.75.2t-.65-.4t-.187-.75t.387-.65l8.975-6.875q.275-.2.588-.3t.637-.1t.638.1t.587.3l9 6.875q.325.25.375.65t-.2.75q-.25.325-.65.375t-.725-.2L20 11.625V19q0 .825-.587 1.413T18 21z" />
+                </svg>',
+                'active' => ['panel', 'panel.*'],
+                'sidebar_only'=> true, // no aparece como tarjeta, solo en el sidebar
             ],
 
             // === SUPERADMIN ===

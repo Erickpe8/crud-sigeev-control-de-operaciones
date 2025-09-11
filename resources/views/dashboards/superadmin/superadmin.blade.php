@@ -10,196 +10,207 @@
 @endpush
 
 @section('content')
-    {{-- Contenedor de notificaciones (arriba a la derecha) --}}
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+        {{-- Contenedor de notificaciones (arriba a la derecha) --}}
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios — Superadmin</h1>
+        <div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
+            <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios — Superadmin</h1>
 
-        <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded mb-6">
-            <p class="text-gray-700 leading-relaxed">
-                Bienvenido, <strong>Superadministrador</strong>. Aquí puedes <strong>crear, editar, eliminar</strong> y
-                <strong>asignar roles</strong> a cualquier usuario del sistema, incluidos administradores.
-                <br><br>
-                Por seguridad, no podrás <strong>auto-eliminarte ni auto-degradarte</strong> desde este panel.
-            </p>
-        </div>
-
-        {{-- Tabla de usuarios --}}
-        <div id="tablaUsuarios" class="relative overflow-x-auto shadow-md sm:rounded-lg">
-            <table id="export-table" class="min-w-full text-sm text-left">
-                <thead class="bg-gray-100 border-b">
-                    <tr class="text-gray-600 uppercase text-xs tracking-wider">
-                        <th class="px-4 py-3">ID</th>
-                        <th class="px-4 py-3">Nombre</th>
-                        <th class="px-4 py-3">Correo</th>
-                        <th class="px-4 py-3">Rol</th>
-                        <th class="px-4 py-3 text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @foreach ($users as $usuario)
-                        @php
-                            $rolesStr = $usuario->roles->pluck('name')->implode(', ');
-                            $isSuper = $usuario->hasRole('superadmin');
-                            $isSelf = auth()->id() === $usuario->id;
-                        @endphp
-                        <tr class="hover:bg-gray-50 transition fila-usuario">
-                            <td class="px-4 py-2">{{ $usuario->id }}</td>
-                            <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
-                            <td class="px-4 py-2">{{ $usuario->email }}</td>
-                            <td class="px-4 py-2">
-                                <span class="px-2 py-0.5 rounded text-xs {{ $isSuper ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }}">
-                                    {{ $rolesStr ?: 'sin rol' }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-center flex gap-2 justify-center">
-                                {{-- Botón Editar con URL real de update --}}
-                                <button
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                                    data-user-id="{{ $usuario->id }}"
-                                    data-update-url="{{ route('superadmin.usuarios.update', $usuario) }}"
-                                    onclick="editarUsuario(this)">
-                                    Editar
-                                </button>
-
-                                @unless($isSuper || $isSelf)
-                                    <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}"
-                                          onsubmit="return confirm('¿Eliminar este usuario?')" class="inline-block">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
-                                            Eliminar
-                                        </button>
-                                    </form>
-                                @endunless
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Paginación si $users es paginator --}}
-        @if($users instanceof \Illuminate\Pagination\AbstractPaginator)
-            <div class="mt-6 flex justify-center">
-                {{ $users->links('pagination::tailwind') }}
+            <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded mb-6">
+                <p class="text-gray-700 leading-relaxed">
+                    Bienvenido, <strong>Superadministrador</strong>. Aquí puedes <strong>crear, editar, eliminar</strong> y
+                    <strong>asignar roles</strong> a cualquier usuario del sistema, incluidos administradores.
+                    <br><br>
+                    Por seguridad, no podrás <strong>auto-eliminarte ni auto-degradarte</strong> desde este panel.
+                </p>
             </div>
-        @endif
 
-        {{-- Formulario de edición (oculto hasta presionar "Editar") --}}
-        <section id="formularioEdicion" class="hidden mt-10">
-            <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
+            {{-- Tabla de usuarios --}}
+            <div id="tablaUsuarios" class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table id="export-table" class="min-w-full text-sm text-left">
+                    <thead class="bg-gray-100 border-b">
+                        <tr class="text-gray-600 uppercase text-xs tracking-wider">
+                            <th class="px-4 py-3">ID</th>
+                            <th class="px-4 py-3">Nombre</th>
+                            <th class="px-4 py-3">Correo</th>
+                            <th class="px-4 py-3">Rol</th>
+                            <th class="px-4 py-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach ($users as $usuario)
+                            @php
+        $rolesStr = $usuario->roles->pluck('name')->implode(', ');
+        $isSuper = $usuario->hasRole('superadmin');
+        $isSelf = auth()->id() === $usuario->id;
+                            @endphp
+                            <tr class="hover:bg-gray-50 transition fila-usuario">
+                                <td class="px-4 py-2">{{ $usuario->id }}</td>
+                                <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
+                                <td class="px-4 py-2">{{ $usuario->email }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-0.5 rounded text-xs {{ $isSuper ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }}">
+                                        {{ $rolesStr ?: 'sin rol' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2 text-center flex gap-2 justify-center">
+                                    {{-- Botón Editar con URL real de update --}}
+                                    <button
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                                        data-user-id="{{ $usuario->id }}"
+                                        data-update-url="{{ route('superadmin.usuarios.update', $usuario) }}"
+                                        onclick="editarUsuario(this)">
+                                        Editar
+                                    </button>
 
-            <form id="formEditarUsuario" method="POST">
-                @csrf
-                @method('PUT')
+                                    @unless($isSuper || $isSelf)
+                                        <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}"
+                                              onsubmit="return confirm('¿Eliminar este usuario?')" class="inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    @endunless
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    @php
-                        $camposTexto = [
-                            'first_name'      => 'Primer Nombre',
-                            'last_name'       => 'Apellido',
-                            'email'           => 'Correo Electrónico',
-                            'birthdate'       => 'Fecha de Nacimiento',
-                            'document_number' => 'Número de Documento',
-                            'phone'           => 'Teléfono', // incluido
-                        ];
-                    @endphp
+            {{-- Paginación si $users es paginator --}}
+            @if($users instanceof \Illuminate\Pagination\AbstractPaginator)
+                <form method="GET" class="mb-4 flex items-center gap-3">
+                    {{-- preserva búsqueda si la usas por servidor --}}
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                    <label class="text-sm text-gray-700">Por página</label>
+                    <select name="per_page" class="border-gray-300 rounded-md text-sm" onchange="this.form.submit()">
+                        @foreach([25, 50, 100, 200] as $n)
+                            <option value="{{ $n }}" @selected((int) request('per_page', 50) === $n)>{{ $n }}</option>
+                        @endforeach
+                    </select>
+                    <span class="text-sm text-gray-500">
+                        Mostrando {{ $users->firstItem() }}–{{ $users->lastItem() }} de {{ $users->total() }}
+                    </span>
+                </form>
+            @endif
 
-                    @foreach ($camposTexto as $id => $label)
+
+            {{-- Formulario de edición (oculto hasta presionar "Editar") --}}
+            <section id="formularioEdicion" class="hidden mt-10">
+                <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
+
+                <form id="formEditarUsuario" method="POST">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        @php
+    $camposTexto = [
+        'first_name' => 'Primer Nombre',
+        'last_name' => 'Apellido',
+        'email' => 'Correo Electrónico',
+        'birthdate' => 'Fecha de Nacimiento',
+        'document_number' => 'Número de Documento',
+        'phone' => 'Teléfono', // incluido
+    ];
+                        @endphp
+
+                        @foreach ($camposTexto as $id => $label)
+                            <div>
+                                <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
+                                <input
+                                    type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
+                                    id="{{ $id }}" name="{{ $id }}" value=""
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        @endforeach
+
+                        @foreach ([
+        'gender_id' => $genders ?? collect(),
+        'document_type_id' => $documentTypes ?? collect(),
+        'user_type_id' => $userTypes ?? collect(),
+    ] as $id => $collection)
+                            <div>
+                                <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
+                                    {{ ucwords(str_replace('_', ' ', $id)) }}
+                                </label>
+                                <select id="{{ $id }}" name="{{ $id }}"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                                        onchange="toggleCamposEspeciales()">
+                                    <option value="">Seleccione</option>
+                                    @foreach ($collection as $item)
+                                        <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endforeach
+
+                        {{-- Rol (Spatie) --}}
                         <div>
-                            <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
-                            <input
-                                type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
-                                id="{{ $id }}" name="{{ $id }}" value=""
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    @endforeach
-
-                    @foreach ([
-                        'gender_id'        => $genders ?? collect(),
-                        'document_type_id' => $documentTypes ?? collect(),
-                        'user_type_id'     => $userTypes ?? collect(),
-                    ] as $id => $collection)
-                        <div>
-                            <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
-                                {{ ucwords(str_replace('_', ' ', $id)) }}
-                            </label>
-                            <select id="{{ $id }}" name="{{ $id }}"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
-                                    onchange="toggleCamposEspeciales()">
-                                <option value="">Seleccione</option>
-                                @foreach ($collection as $item)
-                                    <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endforeach
-
-                    {{-- Rol (Spatie) --}}
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700">Rol</label>
-                        <select id="role" name="role"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                            @foreach (($roles ?? collect()) as $role)
-                                <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
-                            @endforeach
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">El cambio de rol se aplica al guardar.</p>
-                    </div>
-
-                    {{-- Campos adicionales dinámicos --}}
-                    <div id="academic_section" class="col-span-2 hidden">
-                        <div class="mb-4">
-                            <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
-                            <select id="academic_program_id" name="academic_program_id"
+                            <label for="role" class="block text-sm font-medium text-gray-700">Rol</label>
+                            <select id="role" name="role"
                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                                <option value="">Seleccione</option>
-                                @foreach (($academicPrograms ?? collect()) as $program)
-                                    <option value="{{ $program->id }}">{{ $program->name }}</option>
+                                @foreach (($roles ?? collect()) as $role)
+                                    <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
                                 @endforeach
                             </select>
+                            <p class="text-xs text-gray-500 mt-1">El cambio de rol se aplica al guardar.</p>
                         </div>
-                        <div>
-                            <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
-                            <select id="institution_id" name="institution_id"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                                <option value="">Seleccione</option>
-                                @foreach (($institutions ?? collect()) as $inst)
-                                    <option value="{{ $inst->id }}">{{ $inst->name }}</option>
-                                @endforeach
-                            </select>
+
+                        {{-- Campos adicionales dinámicos --}}
+                        <div id="academic_section" class="col-span-2 hidden">
+                            <div class="mb-4">
+                                <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
+                                <select id="academic_program_id" name="academic_program_id"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                                    <option value="">Seleccione</option>
+                                    @foreach (($academicPrograms ?? collect()) as $program)
+                                        <option value="{{ $program->id }}">{{ $program->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
+                                <select id="institution_id" name="institution_id"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                                    <option value="">Seleccione</option>
+                                    @foreach (($institutions ?? collect()) as $inst)
+                                        <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="empresa_section" class="col-span-2 hidden">
+                            <div class="mb-4">
+                                <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+                                <input type="text" id="company_name" name="company_name"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
+                                <input type="text" id="company_address" name="company_address"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
                         </div>
                     </div>
 
-                    <div id="empresa_section" class="col-span-2 hidden">
-                        <div class="mb-4">
-                            <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
-                            <input type="text" id="company_name" name="company_name"
-                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                        </div>
-                        <div>
-                            <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
-                            <input type="text" id="company_address" name="company_address"
-                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                        </div>
+                    <div class="flex flex-col md:flex-row gap-4 md:justify-end">
+                        <button type="submit" id="btnActualizar" disabled
+                                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
+                            Actualizar
+                        </button>
+                        <button type="button" onclick="cancelarEdicion()"
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+                            Cancelar
+                        </button>
                     </div>
-                </div>
-
-                <div class="flex flex-col md:flex-row gap-4 md:justify-end">
-                    <button type="submit" id="btnActualizar" disabled
-                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
-                        Actualizar
-                    </button>
-                    <button type="button" onclick="cancelarEdicion()"
-                            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </section>
-    </div>
+                </form>
+            </section>
+        </div>
 @endsection
 
 @push('scripts')
@@ -219,10 +230,11 @@
 })();
 
 // ====== Mapeos id->nombre desde Blade (fallbacks seguros) ======
-const GENDERS_MAP   = @json(isset($genders) ? $genders->pluck('name','id') : collect());
-const DOC_TYPES_MAP = @json(isset($documentTypes)
-  ? $documentTypes->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')])
-  : collect()
+const GENDERS_MAP   = @json(isset($genders) ? $genders->pluck('name', 'id') : collect());
+const DOC_TYPES_MAP = @json(
+    isset($documentTypes)
+    ? $documentTypes->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')])
+    : collect()
 );
 
 // ====== Dataset (igual al que usas para la edición) ======
@@ -535,4 +547,4 @@ if (form) {
 }
 </script>
 @endpush
- 
+
