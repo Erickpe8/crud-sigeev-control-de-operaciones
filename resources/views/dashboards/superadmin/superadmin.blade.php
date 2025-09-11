@@ -80,22 +80,7 @@
                 </table>
             </div>
 
-            {{-- Paginación si $users es paginator --}}
-            @if($users instanceof \Illuminate\Pagination\AbstractPaginator)
-                <form method="GET" class="mb-4 flex items-center gap-3">
-                    {{-- preserva búsqueda si la usas por servidor --}}
-                    <input type="hidden" name="search" value="{{ request('search') }}">
-                    <label class="text-sm text-gray-700">Por página</label>
-                    <select name="per_page" class="border-gray-300 rounded-md text-sm" onchange="this.form.submit()">
-                        @foreach([25, 50, 100, 200] as $n)
-                            <option value="{{ $n }}" @selected((int) request('per_page', 50) === $n)>{{ $n }}</option>
-                        @endforeach
-                    </select>
-                    <span class="text-sm text-gray-500">
-                        Mostrando {{ $users->firstItem() }}–{{ $users->lastItem() }} de {{ $users->total() }}
-                    </span>
-                </form>
-            @endif
+
 
 
             {{-- Formulario de edición (oculto hasta presionar "Editar") --}}
@@ -216,31 +201,29 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-{{-- Excel (SheetJS oficial, evita 404) --}}
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-{{-- PDF (jsPDF + AutoTable compatibles) --}}
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// ====== CSRF para Axios ======
+/* ====== CSRF para Axios ====== */
 (function setupAxiosCsrf() {
   const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   if (token) axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
 })();
 
-// ====== Mapeos id->nombre desde Blade (fallbacks seguros) ======
+/* ====== Mapeos id->nombre desde Blade (fallbacks seguros) ====== */
 const GENDERS_MAP   = @json(isset($genders) ? $genders->pluck('name', 'id') : collect());
 const DOC_TYPES_MAP = @json(
-    isset($documentTypes)
+  isset($documentTypes)
     ? $documentTypes->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')])
     : collect()
 );
 
-// ====== Dataset (igual al que usas para la edición) ======
+/* ====== Dataset (igual al que usas para la edición) ====== */
 const USUARIOS = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
 
-// ====== Helpers formato/transformación ======
+/* ====== Helpers formato/transformación ====== */
 function formatDateISOtoDMY(iso) {
   if (!iso) return '';
   try {
@@ -276,7 +259,7 @@ function buildExportRows(source) {
   });
 }
 
-// ====== Export a Excel (SheetJS) ======
+/* ====== Export a Excel (SheetJS) ====== */
 function exportExcel(rows, fileName = 'usuarios.xlsx') {
   if (!rows?.length) return alert('No hay datos para exportar.');
   const ws = XLSX.utils.json_to_sheet(rows, { header: Object.keys(rows[0]) });
@@ -289,11 +272,10 @@ function exportExcel(rows, fileName = 'usuarios.xlsx') {
   XLSX.writeFile(wb, fileName);
 }
 
-// ====== Export a PDF (jsPDF + AutoTable) ======
+/* ====== Export a PDF (jsPDF + AutoTable) ====== */
 function exportPDF(rows, fileName = 'usuarios.pdf') {
   if (!rows?.length) return alert('No hay datos para exportar.');
   const { jsPDF } = window.jspdf || {};
-  // ✅ Chequeo correcto: AutoTable vive en jsPDF.API en 2.x
   const hasJsPDF = typeof jsPDF === 'function';
   const hasAutoTable = !!(jsPDF && jsPDF.API && typeof jsPDF.API.autoTable === 'function');
   if (!hasJsPDF || !hasAutoTable) {
@@ -308,7 +290,6 @@ function exportPDF(rows, fileName = 'usuarios.pdf') {
 
   doc.setFontSize(12);
   doc.text('Usuarios', 40, 40);
-  // autoTable ya está mezclado en la instancia vía API
   doc.autoTable({
     startY: 60,
     head: headers,
@@ -322,9 +303,10 @@ function exportPDF(rows, fileName = 'usuarios.pdf') {
   doc.save(fileName);
 }
 
-// ====== DataTable (lista) ======
+/* ====== DataTable (lista) ====== */
 if (document.getElementById("export-table") && typeof simpleDatatables?.DataTable !== 'undefined') {
   const table = new simpleDatatables.DataTable("#export-table", {
+    // ⬇️ Plantilla con select de "por página" en la parte superior
     template: (options, dom) =>
       "<div class='" + options.classes.top + "'>" +
         "<div class='flex flex-row items-center justify-between gap-4'>" +
@@ -360,8 +342,14 @@ if (document.getElementById("export-table") && typeof simpleDatatables?.DataTabl
         (options.paging ? "<div class='" + options.classes.info + "'></div>" : "") +
         "<nav class='" + options.classes.pagination + "'></nav>" +
       "</div>",
-    columns: [{ select: 0, hidden: true, sort: 'desc' }],
-    perPage: 10,
+
+    /* ⬇️ Orden inicial por ID ascendente */
+    columns: [{ select: 0, hidden: true, sort: 'asc' }],
+
+    /* ⬇️ Paginación del plugin: default 100, opciones 50/100/200 */
+    perPage: 100,
+    perPageSelect: [50, 100, 200],
+
     searchable: true,
     labels: {
       placeholder: 'Buscar…',
@@ -372,7 +360,28 @@ if (document.getElementById("export-table") && typeof simpleDatatables?.DataTabl
     }
   });
 
-  // Toggle del dropdown Exportar
+  /* Fallback por si tu versión no soporta array en perPageSelect */
+  table.on('datatable.init', () => {
+    const selector = table.wrapper?.querySelector('select.dataTable-selector');
+    if (!selector) return;
+    // Si el plugin no llenó correctamente, lo re-llenamos
+    const desired = ['50','100','200'];
+    const current = Array.from(selector.options).map(o => o.value);
+    const needFix = desired.join(',') !== current.join(',');
+    if (needFix) {
+      selector.innerHTML = '';
+      desired.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        selector.appendChild(opt);
+      });
+    }
+    selector.value = '100';
+    selector.dispatchEvent(new Event('change'));
+  });
+
+  /* ====== Exportaciones (filtra por búsqueda actual del DataTable) ====== */
   const btn = document.getElementById('exportDropdownButton');
   const menu = document.getElementById('exportDropdown');
   btn?.addEventListener('click', (e) => {
@@ -385,7 +394,6 @@ if (document.getElementById("export-table") && typeof simpleDatatables?.DataTabl
     if (!inside) menu.classList.add('hidden');
   });
 
-  // Si quieres exportar SOLO lo filtrado por el buscador actual:
   function currentFilter() {
     const q = document.querySelector('.dataTable-input')?.value?.toLowerCase()?.trim() || '';
     if (!q) return USUARIOS;
@@ -396,7 +404,6 @@ if (document.getElementById("export-table") && typeof simpleDatatables?.DataTabl
     );
   }
 
-  // Export Excel/PDF
   document.getElementById('export-excel')?.addEventListener('click', () => {
     menu?.classList.add('hidden');
     const rows = buildExportRows(currentFilter());
@@ -410,7 +417,7 @@ if (document.getElementById("export-table") && typeof simpleDatatables?.DataTabl
   });
 }
 
-// ====== Lógica de edición (SPA dentro del layout) ======
+/* ====== Lógica de edición (SPA dentro del layout) ====== */
 const usuarios = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
 const form = document.getElementById('formEditarUsuario');
 const btnActualizar = document.getElementById('btnActualizar');
@@ -512,7 +519,6 @@ function validarFormulario() {
   btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
 }
 
-// Wire inputs
 if (form) {
   form.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('input', validarFormulario);
@@ -547,4 +553,6 @@ if (form) {
 }
 </script>
 @endpush
+
+
 
