@@ -27,8 +27,6 @@ class SuperAdminController extends Controller
 {
     public function index(Request $request)
     {
-        // ⚠️ SIN paginate(), SIN withQueryString(), SIN filtro search del backend.
-        // El DataTable se encarga 100% en el cliente.
         $users = User::with('roles')
             ->select([
                 'id','first_name','last_name','email',
@@ -36,7 +34,7 @@ class SuperAdminController extends Controller
                 'document_type_id','user_type_id','birthdate'
             ])
             ->orderByDesc('id')
-            ->limit(10000) // opcional: tope para no traer más de 10k filas al navegador
+            ->limit(10000)
             ->get();
 
         // Columnas “name-like” detectadas para aliasar

@@ -86,8 +86,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/usuarios/{user}', [AdminController::class, 'destroy'])
             ->name('usuarios.destroy');
 
-        Route::get('/usuarios/{user}', [UserController::class, 'show'])
-            ->name('usuarios.show');
+        Route::get('/usuarios/{user}', [AdminController::class, 'show'])
+        ->name('usuarios.show');
+
     });
 
     /**
