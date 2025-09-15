@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema; // <— para detectar columnas
+use Illuminate\Support\Facades\Schema; // para detectar columnas
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Gender;
@@ -21,29 +21,23 @@ use Carbon\Carbon;
 
 /**
  * Controlador principal de administración de usuarios (SUPERADMIN)
+ * Versión: paginación y búsqueda SOLO en el plugin (cliente)
  */
 class SuperAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('roles');
+        $users = User::with('roles')
+            ->select([
+                'id','first_name','last_name','email',
+                'document_number','phone','gender_id',
+                'document_type_id','user_type_id','birthdate'
+            ])
+            ->orderByDesc('id')
+            ->limit(10000)
+            ->get();
 
-        if ($request->filled('search')) {
-            $search = trim((string) $request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('document_number', 'like', "%{$search}%");
-            });
-        }
-
-        $perPage = (int) $request->input('per_page', 50);
-        $perPage = $perPage > 0 && $perPage <= 200 ? $perPage : 50;
-
-        $users = $query->paginate($perPage)->withQueryString();
-
-        // Columnas “name-like” detectadas en runtime para evitar errores 1054
+        // Columnas “name-like” detectadas para aliasar
         $docTypeCol  = $this->pickNameColumn('document_types', ['name','type','title','label','description','descripcion']);
         $userTypeCol = $this->pickNameColumn('user_types',     ['name','type','title','label','description','descripcion']);
 
@@ -54,7 +48,6 @@ class SuperAdminController extends Controller
         $institutions     = Institution::select('id','name')->get();
         $roles            = Role::select('name')->get();
 
-        // ⚠️ Retorna la vista de SUPERADMIN
         return view('dashboards.superadmin.superadmin', compact(
             'users',
             'genders',
@@ -70,9 +63,17 @@ class SuperAdminController extends Controller
     {
         $data = $request->validated();
 
-        $data['email']          = mb_strtolower($data['email']);
+        // normalizaciones
+        $data['email']          = mb_strtolower(trim($data['email']));
         $data['status']         = array_key_exists('status', $data) ? (bool) $data['status'] : true;
         $data['accepted_terms'] = (bool) ($data['accepted_terms'] ?? false);
+
+        // normaliza phone (si viene)
+        if (array_key_exists('phone', $data) && $data['phone'] !== null) {
+            $phone = trim($data['phone']);
+            $phone = preg_replace('/\s+/', ' ', $phone); // colapsa espacios
+            $data['phone'] = $phone;
+        }
 
         if (!empty($data['birthdate'])) {
             $data['birthdate'] = $this->parseBirthdate($data['birthdate']);
@@ -110,7 +111,6 @@ class SuperAdminController extends Controller
                 ], 201);
             }
 
-            // 🔁 Redirige a la ruta del panel de SUPERADMIN
             return redirect()->route('dashboards.superadmin')->with('success', 'Usuario creado correctamente.');
         } catch (\Throwable $e) {
             Log::error('Error al crear usuario: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -139,7 +139,7 @@ class SuperAdminController extends Controller
         $institutions     = Institution::select('id','name')->get();
         $roles            = Role::select('name')->get();
 
-        // Si tu vista de edición es otra, actualiza el path aquí
+        // Actualiza la vista si tu path de edición es otro
         return view('admin.users.edit', compact(
             'user',
             'genders',
@@ -152,212 +152,206 @@ class SuperAdminController extends Controller
     }
 
     public function update(UpdateUserRequest $request, User $user)
-{
-    $auth = auth()->user();
+    {
+        $auth = auth()->user();
 
-    // 1) Guardrails de autorización
-    if ($user->hasRole('superadmin') && !$auth?->hasRole('superadmin')) {
-        return $request->expectsJson()
-            ? response()->json(['message' => 'No autorizado para editar a un superadmin.'], 403)
-            : abort(403, 'No autorizado para editar a un superadmin.');
-    }
-
-    // Normalización inicial (limpiar campos antes de validar)
-    $request->merge([
-        'email' => trim(mb_strtolower($request->input('email'))),
-        'document_number' => trim($request->input('document_number')),
-    ]);
-
-    // 2) Revalidar con reglas condicionales
-    $userId = $user->id;
-
-    $rules = [
-        'first_name' => 'required|string|max:100',
-        'last_name'  => 'required|string|max:100',
-        'gender_id'  => 'nullable|exists:genders,id',
-        'document_type_id' => 'nullable|exists:document_types,id',
-        'user_type_id'     => 'nullable|exists:user_types,id',
-        'academic_program_id' => 'nullable|exists:academic_programs,id',
-        'institution_id'      => 'nullable|exists:institutions,id',
-        'company_name' => 'nullable|string|max:255',
-        'company_address' => 'nullable|string|max:255',
-        'birthdate' => 'nullable|string',
-        'status' => 'nullable|boolean',
-        'accepted_terms' => 'nullable|boolean',
-        'role' => 'nullable|string|exists:roles,name',
-
-    ];
-
-    // Validación condicional para email
-    if ($request->email !== $user->email) {
-        $rules['email'] = [
-            'required', 'email',
-            Rule::unique('users', 'email')->ignore($userId),
-        ];
-    } else {
-        $rules['email'] = ['required', 'email'];
-    }
-
-    // Validación condicional para document_number
-    if ($request->document_number !== $user->document_number) {
-        $rules['document_number'] = [
-            'nullable', 'string', 'max:50',
-            Rule::unique('users', 'document_number')->ignore($userId),
-        ];
-    }
-
-    $data = $request->validate($rules);
-
-    // 3) Normalización final
-    if (array_key_exists('birthdate', $data)) {
-        $data['birthdate'] = $data['birthdate'] ? $this->parseBirthdate($data['birthdate']) : null;
-    }
-
-    try {
-        $updated = DB::transaction(function () use ($user, $data, $auth) {
-
-            // 4) Fill seguro
-            $fillable = collect($data)->except(['password', 'role'])->toArray();
-            $user->fill($fillable);
-
-            // 5) Password opcional
-            if (!empty($data['password'])) {
-                $user->password = Hash::make($data['password']);
-            }
-
-            // 6) Guarda si hay cambios
-            if ($user->isDirty()) {
-                $user->save();
-            }
-
-// 7) Cambio de rol (forzado, manual)
-            if (array_key_exists('role', $data) && $data['role'] !== null && $data['role'] !== '') {
-                $newRole = $data['role'];
-
-                // Solo superadmin puede cambiar roles
-                if (!$auth?->hasRole('superadmin')) {
-                    throw new \RuntimeException('No autorizado para modificar roles.');
-                }
-
-                if ($auth->id === $user->id && $user->hasRole('superadmin') && $newRole !== 'superadmin') {
-                    throw new \RuntimeException('No puedes degradar tu propio rol de superadmin.');
-                }
-
-                $roleModel = Role::where('name', $newRole)->first();
-                if (!$roleModel) {
-                    throw new \RuntimeException('El rol especificado no existe.');
-                }
-
-                // Limpieza manual
-                DB::table('model_has_roles')
-                    ->where('model_id', $user->id)
-                    ->where('model_type', User::class)
-                    ->delete();
-
-                DB::table('model_has_roles')->insert([
-                    'role_id'    => $roleModel->id,
-                    'model_type' => User::class,
-                    'model_id'   => $user->id,
-                ]);
-
-                \Log::info("✅ Rol forzado actualizado para el usuario {$user->id} a: {$newRole}");
-            }
-
-            return $user->load('roles');
-        });
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Usuario actualizado correctamente.',
-                'user'    => $updated,
-            ], 200);
+        // Guardrails de autorización
+        if ($user->hasRole('superadmin') && !$auth?->hasRole('superadmin')) {
+            return $request->expectsJson()
+                ? response()->json(['message' => 'No autorizado para editar a un superadmin.'], 403)
+                : abort(403, 'No autorizado para editar a un superadmin.');
         }
 
-        return redirect()
-            ->route('dashboards.superadmin')
-            ->with('success', 'Usuario actualizado correctamente.');
-
-    } catch (\RuntimeException $ex) {
-        if ($request->expectsJson()) {
-            return response()->json(['message' => $ex->getMessage()], 422);
+        // Normalización inicial
+        $phoneSanitized = null;
+        if ($request->filled('phone')) {
+            $phoneSanitized = preg_replace('/\s+/', ' ', trim((string) $request->input('phone')));
         }
-        return back()->withErrors(['role' => $ex->getMessage()]);
-    } catch (\Illuminate\Database\QueryException $ex) {
-        $msg = 'No se pudo actualizar el usuario. Verifica que el correo/usuario no estén repetidos.';
-        if ($request->expectsJson()) {
-            return response()->json(['message' => $msg], 422);
-        }
-        return back()->withErrors(['general' => $msg])->withInput();
-    } catch (\Throwable $e) {
-        Log::error('Error al actualizar usuario: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
 
-        if ($request->expectsJson()) {
-            return response()->json(['message' => 'Error interno del servidor.'], 500);
-        }
-        return back()->withErrors(['general' => 'Error al actualizar usuario.']);
-    }
-}
-
-public function destroy(Request $request, User $user)
-{
-    $auth = $request->user();
-
-    // 1) Guardrails
-    if ($user->id === $auth->id) {
-        return $request->expectsJson()
-            ? response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 403)
-            : abort(403, 'No puedes eliminar tu propia cuenta.');
-    }
-
-    if ($user->hasRole('superadmin')) {
-        return $request->expectsJson()
-            ? response()->json(['message' => 'No puedes eliminar a un superadmin.'], 403)
-            : abort(403, 'No puedes eliminar a un superadmin.');
-    }
-
-    try {
-        DB::transaction(function () use ($user) {
-            // 2) Revocar tokens (Sanctum)
-            if (method_exists($user, 'tokens')) {
-                $user->tokens()->delete();
-            } else {
-                // Fallback si no hay relación definida
-                PersonalAccessToken::where('tokenable_type', User::class)
-                    ->where('tokenable_id', $user->id)
-                    ->delete();
-            }
-
-            // 3) Limpiar relaciones de permisos/roles (Spatie)
-            if (method_exists($user, 'roles')) {
-                $user->syncRoles([]); // elimina registros de model_has_roles
-            }
-            if (method_exists($user, 'permissions')) {
-                $user->syncPermissions([]); // por si asignas directos
-            }
-
-            // 4) Eliminar (soft delete si el modelo usa SoftDeletes)
-            $user->delete();
-        });
-
-        // 5) Respuestas coherentes
-        if ($request->expectsJson()) {
-            return response()->json(['message' => 'Usuario eliminado correctamente.'], 200);
-        }
-        return back()->with('success', 'Usuario eliminado correctamente.');
-
-    } catch (\Throwable $e) {
-        Log::error('Error al eliminar usuario', [
-            'user_id' => $user->id,
-            'by'      => $auth?->id,
-            'error'   => $e->getMessage(),
+        $request->merge([
+            'email'           => trim(mb_strtolower((string) $request->input('email'))),
+            'document_number' => trim((string) $request->input('document_number')),
+            'phone'           => $phoneSanitized,
         ]);
 
-        if ($request->expectsJson()) {
-            return response()->json(['message' => 'No se pudo eliminar el usuario.'], 500);
+        // Revalidación condicional
+        $userId = $user->id;
+
+        $rules = [
+            'first_name'          => 'required|string|max:100',
+            'last_name'           => 'required|string|max:100',
+            'gender_id'           => 'nullable|exists:genders,id',
+            'document_type_id'    => 'nullable|exists:document_types,id',
+            'user_type_id'        => 'nullable|exists:user_types,id',
+            'academic_program_id' => 'nullable|exists:academic_programs,id',
+            'institution_id'      => 'nullable|exists:institutions,id',
+            'company_name'        => 'nullable|string|max:255',
+            'company_address'     => 'nullable|string|max:255',
+            'birthdate'           => 'nullable|string',
+            'status'              => 'nullable|boolean',
+            'accepted_terms'      => 'nullable|boolean',
+            'role'                => 'nullable|string|exists:roles,name',
+            'phone'               => ['nullable','string','max:25','regex:/^[0-9+\-\s()]{7,25}$/'],
+        ];
+
+        if ($request->email !== $user->email) {
+            $rules['email'] = [
+                'required', 'email',
+                Rule::unique('users', 'email')->ignore($userId),
+            ];
+        } else {
+            $rules['email'] = ['required', 'email'];
         }
-        return back()->withErrors(['error' => 'No se pudo eliminar el usuario.']);
+
+        if ($request->document_number !== $user->document_number) {
+            $rules['document_number'] = [
+                'nullable', 'string', 'max:50',
+                Rule::unique('users', 'document_number')->ignore($userId),
+            ];
+        }
+
+        $data = $request->validate($rules);
+
+        // Normalización final
+        if (array_key_exists('birthdate', $data)) {
+            $data['birthdate'] = $data['birthdate'] ? $this->parseBirthdate($data['birthdate']) : null;
+        }
+
+        try {
+            $updated = DB::transaction(function () use ($user, $data, $auth) {
+
+                $fillable = collect($data)->except(['password', 'role'])->toArray();
+                $user->fill($fillable);
+
+                if (!empty($data['password'])) {
+                    $user->password = Hash::make($data['password']);
+                }
+
+                if ($user->isDirty()) {
+                    $user->save();
+                }
+
+                // Cambio de rol (forzado/manual)
+                if (array_key_exists('role', $data) && $data['role'] !== null && $data['role'] !== '') {
+                    $newRole = $data['role'];
+
+                    if (!$auth?->hasRole('superadmin')) {
+                        throw new \RuntimeException('No autorizado para modificar roles.');
+                    }
+
+                    if ($auth->id === $user->id && $user->hasRole('superadmin') && $newRole !== 'superadmin') {
+                        throw new \RuntimeException('No puedes degradar tu propio rol de superadmin.');
+                    }
+
+                    $roleModel = Role::where('name', $newRole)->first();
+                    if (!$roleModel) {
+                        throw new \RuntimeException('El rol especificado no existe.');
+                    }
+
+                    DB::table('model_has_roles')
+                        ->where('model_id', $user->id)
+                        ->where('model_type', User::class)
+                        ->delete();
+
+                    DB::table('model_has_roles')->insert([
+                        'role_id'    => $roleModel->id,
+                        'model_type' => User::class,
+                        'model_id'   => $user->id,
+                    ]);
+
+                    \Log::info("✅ Rol forzado actualizado para el usuario {$user->id} a: {$newRole}");
+                }
+
+                return $user->load('roles');
+            });
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Usuario actualizado correctamente.',
+                    'user'    => $updated,
+                ], 200);
+            }
+
+            return redirect()
+                ->route('dashboards.superadmin')
+                ->with('success', 'Usuario actualizado correctamente.');
+
+        } catch (\RuntimeException $ex) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $ex->getMessage()], 422);
+            }
+            return back()->withErrors(['role' => $ex->getMessage()]);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            $msg = 'No se pudo actualizar el usuario. Verifica que el correo/usuario no estén repetidos.';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $msg], 422);
+            }
+            return back()->withErrors(['general' => $msg])->withInput();
+        } catch (\Throwable $e) {
+            Log::error('Error al actualizar usuario: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Error interno del servidor.'], 500);
+            }
+            return back()->withErrors(['general' => 'Error al actualizar usuario.']);
+        }
     }
-}
+
+    public function destroy(Request $request, User $user)
+    {
+        $auth = $request->user();
+
+        if ($user->id === $auth->id) {
+            return $request->expectsJson()
+                ? response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 403)
+                : abort(403, 'No puedes eliminar tu propia cuenta.');
+        }
+
+        if ($user->hasRole('superadmin')) {
+            return $request->expectsJson()
+                ? response()->json(['message' => 'No puedes eliminar a un superadmin.'], 403)
+                : abort(403, 'No puedes eliminar a un superadmin.');
+        }
+
+        try {
+            DB::transaction(function () use ($user) {
+                // Revocar tokens (Sanctum si aplica)
+                if (method_exists($user, 'tokens')) {
+                    $user->tokens()->delete();
+                } else {
+                    // Fallback si no hay relación definida
+                    // \Laravel\Sanctum\PersonalAccessToken::where(...) si usas Sanctum y quieres limpiar
+                }
+
+                // Limpiar permisos/roles (Spatie)
+                if (method_exists($user, 'roles')) {
+                    $user->syncRoles([]);
+                }
+                if (method_exists($user, 'permissions')) {
+                    $user->syncPermissions([]);
+                }
+
+                $user->delete();
+            });
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Usuario eliminado correctamente.'], 200);
+            }
+            return back()->with('success', 'Usuario eliminado correctamente.');
+
+        } catch (\Throwable $e) {
+            Log::error('Error al eliminar usuario', [
+                'user_id' => $user->id,
+                'by'      => $auth?->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'No se pudo eliminar el usuario.'], 500);
+            }
+            return back()->withErrors(['error' => 'No se pudo eliminar el usuario.']);
+        }
+    }
 
     /** Detecta una columna “de nombre” en la tabla para aliasarla */
     private function pickNameColumn(string $table, array $candidates = ['name','type','title','label','description','descripcion']): ?string
@@ -427,6 +421,7 @@ class StoreUserRequest extends FormRequest
             'accepted_terms'      => 'nullable|boolean',
             'username'            => 'nullable|string|max:60|unique:users,username',
             'role'                => ['nullable', Rule::in(Role::pluck('name')->all())],
+            'phone'               => ['nullable','string','max:25','regex:/^[0-9+\-\s()]{7,25}$/'],
         ];
     }
 
@@ -456,10 +451,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'first_name'          => 'required|string|max:100',
             'last_name'           => 'required|string|max:100',
-            'email' => [
-                'required', 'email',
-                Rule::unique('users','email')->ignore($userId),
-            ],
+            'email'               => ['required','email', Rule::unique('users','email')->ignore($userId)],
             'password'            => 'nullable|string|min:8|confirmed',
             'gender_id'           => 'nullable|exists:genders,id',
             'document_type_id'    => 'nullable|exists:document_types,id',
@@ -472,11 +464,9 @@ class UpdateUserRequest extends FormRequest
             'birthdate'           => 'nullable|string',
             'status'              => 'nullable|boolean',
             'accepted_terms'      => 'nullable|boolean',
-            'username'            => [
-                'nullable','string','max:60',
-                Rule::unique('users','username')->ignore($userId),
-            ],
+            'username'            => ['nullable','string','max:60', Rule::unique('users','username')->ignore($userId)],
             'role'                => ['nullable', Rule::in(Role::pluck('name')->all())],
+            'phone'               => ['nullable','string','max:25','regex:/^[0-9+\-\s()]{7,25}$/'],
         ];
     }
 }

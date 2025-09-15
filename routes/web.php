@@ -10,6 +10,10 @@ use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
 use App\Http\Controllers\web\Dashboard\EventController;
 use App\Http\Controllers\web\Dashboard\SpeakerController;
+use Illuminate\Support\Facades\DB;
+use App\Models\User;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -82,8 +86,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/usuarios/{user}', [AdminController::class, 'destroy'])
             ->name('usuarios.destroy');
 
-        Route::get('/usuarios/{user}', [UserController::class, 'show'])
-            ->name('usuarios.show');
+        Route::get('/usuarios/{user}', [AdminController::class, 'show'])
+        ->name('usuarios.show');
+
     });
 
     /**
@@ -129,3 +134,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('speakers', SpeakerController::class)->names('speakers');
     Route::resource('events', EventController::class)->names('events');
 });
+
+Route::get('/debug/db', function () {
+return [
+'connection' => config('database.default'),
+'db_name' => DB::connection()->getDatabaseName(),
+'driver' => DB::connection()->getDriverName(),
+'users_count'=> User::count(),
+'last_user' => optional(User::query()->latest('id')->first())->only(['id','email','created_at']),
+];
+})->middleware('auth');

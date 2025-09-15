@@ -52,51 +52,27 @@ class User extends Authenticatable
         'password'
     ];
 
-    /**
-     * Obtener el género del usuario.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function gender(): BelongsTo
     {
         return $this->belongsTo(Gender::class);
     }
 
-    /**
-     * Obtener el tipo de documento del usuario.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
+
     public function documentType(): BelongsTo
     {
         return $this->belongsTo(DocumentType::class);
     }
 
-    /**
-     * Obtener el tipo de persona del usuario.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function UserType(): BelongsTo
+    public function userType(): BelongsTo
     {
         return $this->belongsTo(UserType::class);
     }
 
-    /**
-     * Obtener el programa académico del usuario.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function academicProgram(): BelongsTo
     {
         return $this->belongsTo(AcademicProgram::class);
     }
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -108,11 +84,11 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'birthdate' => 'date',
-        'accepted_terms' => 'boolean',
-        'status' => 'boolean',
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'birthdate' => 'date:Y-m-d',
+    'accepted_terms' => 'boolean',
+    'status' => 'boolean',
     ];
 
     /**

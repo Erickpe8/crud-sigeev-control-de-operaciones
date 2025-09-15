@@ -1,416 +1,558 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Panel de Superadministración</title>
-    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-<body class="bg-gray-100 p-6">
+{{-- resources/views/users/superadmin.blade.php --}}
+@extends('layouts.panel')
 
-<div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios — Superadmin</h1>
-    <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded">
-        <p class="text-gray-700 leading-relaxed">
-            Bienvenido, <strong>Superadministrador</strong>. Aquí puedes <strong>crear, editar, eliminar</strong> y
-            <strong>asignar roles</strong> a cualquier usuario del sistema, incluidos administradores.
-            <br><br>
-            Por seguridad, no podrás <strong>auto‑eliminarte ni auto‑degradarte</strong> desde este panel.
-        </p>
+@push('head')
+    {{-- CSRF para Axios --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        {{-- Buscador + Registrar + Logout --}}
-        <div class="mt-6 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <!-- Buscador -->
-            <form method="GET" class="flex-1">
-                <div class="relative w-full">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1010 18a7.5 7.5 0 006.65-6.85z"/>
-                        </svg>
-                    </div>
+    {{-- simple-datatables CSS --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
+@endpush
 
-                    <input
-                        type="search" name="search" id="search" value="{{ request('search') }}"
-                        placeholder="Buscar por nombre o correo..."
-                        class="block w-full p-4 pl-10
-                            pr-40 md:pr-56  {{-- espacio para 2 botones --}}
-                            text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
-                            focus:ring-blue-500 focus:border-blue-500">
+@section('content')
+        {{-- Contenedor de notificaciones (arriba a la derecha) --}}
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-                    <!-- Grupo de botones dentro del input -->
-                    <div class="absolute right-2.5 bottom-2.5 flex gap-2">
-                        <button type="button" id="btnClearSearch"
-                                class="bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg text-sm px-4 py-2
-                                    focus:outline-none focus:ring-4 focus:ring-gray-300">
-                            Limpiar
-                        </button>
-                        <button type="submit"
-                                class="bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-4 py-2
-                                    focus:outline-none focus:ring-4 focus:ring-blue-300">
-                            Buscar
-                        </button>
-                    </div>
-                </div>
-            </form>
+        <div id="infoPanel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
+            <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Gestión de Usuarios — Superadmin</h1>
 
-            <!-- Botón Registrar -->
-            <div>
-                <a href="{{ route('panel.usuarios.crear') }}"
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow block text-center">
-                    Registrar Un Nuevo Usuario
-                </a>
+            <div id="mensajeBienvenida" class="bg-white p-4 shadow rounded mb-6">
+                <p class="text-gray-700 leading-relaxed">
+                    Bienvenido, <strong>Superadministrador</strong>. Aquí puedes <strong>crear, editar, eliminar</strong> y
+                    <strong>asignar roles</strong> a cualquier usuario del sistema, incluidos administradores.
+                    <br><br>
+                    Por seguridad, no podrás <strong>auto-eliminarte ni auto-degradarte</strong> desde este panel.
+                </p>
             </div>
 
-            <!-- Botón Cerrar sesión -->
-            <div>
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow block text-center">
-                        Cerrar Sesión
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
+            {{-- Tabla de usuarios --}}
+            <div id="tablaUsuarios" class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table id="export-table" class="min-w-full text-sm text-left">
+                    <thead class="bg-gray-100 border-b">
+                        <tr class="text-gray-600 uppercase text-xs tracking-wider">
+                            <th class="px-4 py-3">ID</th>
+                            <th class="px-4 py-3">Nombre</th>
+                            <th class="px-4 py-3">Correo</th>
+                            <th class="px-4 py-3">Rol</th>
+                            <th class="px-4 py-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach ($users as $usuario)
+                            @php
+        $rolesStr = $usuario->roles->pluck('name')->implode(', ');
+        $isSuper = $usuario->hasRole('superadmin');
+        $isSelf = auth()->id() === $usuario->id;
+                            @endphp
+                            <tr class="hover:bg-gray-50 transition fila-usuario">
+                                <td class="px-4 py-2">{{ $usuario->id }}</td>
+                                <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
+                                <td class="px-4 py-2">{{ $usuario->email }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-0.5 rounded text-xs {{ $isSuper ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }}">
+                                        {{ $rolesStr ?: 'sin rol' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2 text-center flex gap-2 justify-center">
+                                    {{-- Botón Editar con URL real de update --}}
+                                    <button
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                                        data-user-id="{{ $usuario->id }}"
+                                        data-update-url="{{ route('superadmin.usuarios.update', $usuario) }}"
+                                        onclick="editarUsuario(this)">
+                                        Editar
+                                    </button>
 
-    {{-- Tabla de usuarios --}}
-    <section id="tablaUsuarios">
-        <table class="min-w-full table-auto text-sm text-left border-collapse border">
-            <thead class="bg-gray-100 border-b">
-            <tr class="text-gray-600 uppercase text-xs tracking-wider">
-                <th class="px-4 py-3">Nombre</th>
-                <th class="px-4 py-3">Correo</th>
-                <th class="px-4 py-3">Rol</th>
-                <th class="px-4 py-3 text-center">Acciones</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="tablaCuerpoUsuarios">
-            @foreach ($users as $usuario)
-                @php
-                    $rolesStr = $usuario->roles->pluck('name')->implode(', ');
-                    $isSuper = $usuario->hasRole('superadmin');
-                    $isSelf  = auth()->id() === $usuario->id;
-                @endphp
-                <tr class="hover:bg-gray-50 transition fila-usuario">
-                    <td class="px-4 py-2">{{ $usuario->first_name }} {{ $usuario->last_name }}</td>
-                    <td class="px-4 py-2">{{ $usuario->email }}</td>
-                    <td class="px-4 py-2">
-                        <span class="inline-flex items-center gap-2">
-                            <span class="px-2 py-0.5 rounded text-xs
-                                {{ $isSuper ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }}">
-                                {{ $rolesStr ?: 'sin rol' }}
-                            </span>
-                        </span>
-                    </td>
-                    <td class="px-4 py-2 text-center flex gap-2 justify-center items-center">
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                                onclick="editarUsuario({{ $usuario->id }})">
-                            Editar
-                        </button>
-
-                    @php
-                        $isSuperAdmin = $usuario->hasRole('superadmin');
-                    @endphp
-
-                    @if(!$isSuperAdmin)
-                        <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}" class="inline-block"
-                            onsubmit="return confirmarEliminacion({{ $usuario->id }}, {{ $isSelf ? 'true' : 'false' }}, {{ $isSuper ? 'true' : 'false' }})">
-                            @csrf
-                            @method('DELETE')
-                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
-                                Eliminar
-                            </button>
-                        </form>
-                    @endif
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
-        <div class="mt-6 flex justify-center">
-            {{ $users->links('pagination::tailwind') }}
-        </div>
-    </section>
-
-    {{-- Formulario de edición --}}
-    <section id="formularioEdicion" class="hidden mt-10">
-        <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
-
-        <form id="formEditarUsuario" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                @php
-                    $camposTexto = [
-                        'first_name' => 'Primer Nombre',
-                        'last_name' => 'Apellido',
-                        'email' => 'Correo Electrónico',
-                        'birthdate' => 'Fecha de Nacimiento',
-                        'document_number' => 'Número de Documento',
-                        'phone' => 'Teléfono'
-                    ];
-                @endphp
-
-                @foreach ($camposTexto as $id => $label)
-                    <div>
-                        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
-                        <input
-                            type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
-                            id="{{ $id }}" name="{{ $id }}" value=""
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                @endforeach
-
-                @foreach ([
-                    'gender_id' => $genders,
-                    'document_type_id' => $documentTypes,
-                    'user_type_id' => $userTypes
-                ] as $id => $collection)
-                    <div>
-                        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
-                            {{ ucwords(str_replace('_', ' ', $id)) }}
-                        </label>
-                        <select id="{{ $id }}" name="{{ $id }}"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
-                                onchange="toggleCamposEspeciales()">
-                            <option value="">Seleccione</option>
-                            @foreach ($collection as $item)
-                                <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endforeach
-
-                {{-- Rol (Spatie) --}}
-                <div>
-                    <label for="role" class="block text-sm font-medium text-gray-700">Rol</label>
-                    <select id="role" name="role"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                        @foreach ($roles as $role)
-                            <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                                    @unless($isSuper || $isSelf)
+                                        <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}"
+                                              onsubmit="return confirm('¿Eliminar este usuario?')" class="inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    @endunless
+                                </td>
+                            </tr>
                         @endforeach
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">El cambio de rol se aplica al guardar.</p>
-                </div>
-
-                {{-- Campos adicionales dinámicos --}}
-                <div id="academic_section" class="col-span-2 hidden">
-                    <div class="mb-4">
-                        <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
-                        <select id="academic_program_id" name="academic_program_id"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                            <option value="">Seleccione</option>
-                            @foreach ($academicPrograms as $program)
-                                <option value="{{ $program->id }}">{{ $program->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
-                        <select id="institution_id" name="institution_id"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                            <option value="">Seleccione</option>
-                            @foreach ($institutions as $inst)
-                                <option value="{{ $inst->id }}">{{ $inst->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div id="empresa_section" class="col-span-2 hidden">
-                    <div class="mb-4">
-                        <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
-                        <input type="text" id="company_name" name="company_name"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
-                        <input type="text" id="company_address" name="company_address"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                </div>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="flex gap-4">
-                <button type="submit" id="btnActualizar" disabled
-                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
-                    Actualizar
-                </button>
-                <button type="button" onclick="cancelarEdicion()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
-                    Cancelar
-                </button>
-            </div>
-        </form>
-    </section>
-</div>
+
+
+
+            {{-- Formulario de edición (oculto hasta presionar "Editar") --}}
+            <section id="formularioEdicion" class="hidden mt-10">
+                <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
+
+                <form id="formEditarUsuario" method="POST">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        @php
+    $camposTexto = [
+        'first_name' => 'Primer Nombre',
+        'last_name' => 'Apellido',
+        'email' => 'Correo Electrónico',
+        'birthdate' => 'Fecha de Nacimiento',
+        'document_number' => 'Número de Documento',
+        'phone' => 'Teléfono', // incluido
+    ];
+                        @endphp
+
+                        @foreach ($camposTexto as $id => $label)
+                            <div>
+                                <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
+                                <input
+                                    type="{{ $id === 'email' ? 'email' : ($id === 'birthdate' ? 'date' : 'text') }}"
+                                    id="{{ $id }}" name="{{ $id }}" value=""
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        @endforeach
+
+                        @foreach ([
+        'gender_id' => $genders ?? collect(),
+        'document_type_id' => $documentTypes ?? collect(),
+        'user_type_id' => $userTypes ?? collect(),
+    ] as $id => $collection)
+                            <div>
+                                <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
+                                    {{ ucwords(str_replace('_', ' ', $id)) }}
+                                </label>
+                                <select id="{{ $id }}" name="{{ $id }}"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                                        onchange="toggleCamposEspeciales()">
+                                    <option value="">Seleccione</option>
+                                    @foreach ($collection as $item)
+                                        <option value="{{ $item->id }}">{{ $item->name ?? $item->type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endforeach
+
+                        {{-- Rol (Spatie) --}}
+                        <div>
+                            <label for="role" class="block text-sm font-medium text-gray-700">Rol</label>
+                            <select id="role" name="role"
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                                @foreach (($roles ?? collect()) as $role)
+                                    <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">El cambio de rol se aplica al guardar.</p>
+                        </div>
+
+                        {{-- Campos adicionales dinámicos --}}
+                        <div id="academic_section" class="col-span-2 hidden">
+                            <div class="mb-4">
+                                <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa Académico</label>
+                                <select id="academic_program_id" name="academic_program_id"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                                    <option value="">Seleccione</option>
+                                    @foreach (($academicPrograms ?? collect()) as $program)
+                                        <option value="{{ $program->id }}">{{ $program->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
+                                <select id="institution_id" name="institution_id"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                                    <option value="">Seleccione</option>
+                                    @foreach (($institutions ?? collect()) as $inst)
+                                        <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="empresa_section" class="col-span-2 hidden">
+                            <div class="mb-4">
+                                <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+                                <input type="text" id="company_name" name="company_name"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
+                                <input type="text" id="company_address" name="company_address"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-4 md:justify-end">
+                        <button type="submit" id="btnActualizar" disabled
+                                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed">
+                            Actualizar
+                        </button>
+                        <button type="button" onclick="cancelarEdicion()"
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+@endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-    const usuarios = @json($users->toArray()['data'] ?? []);
-    const form = document.getElementById('formEditarUsuario');
-    const btnActualizar = document.getElementById('btnActualizar');
-    const authId = {{ auth()->id() }};
+/* ====== CSRF para Axios ====== */
+(function setupAxiosCsrf() {
+  const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  if (token) axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+})();
 
-    const camposRequeridos = ['first_name','last_name','email','birthdate','document_number','gender_id','document_type_id','user_type_id','phone'];
-    const camposEstudiante = ['academic_program_id','institution_id'];
-    const camposEmpresa = ['company_name','company_address'];
+/* ====== Mapeos id->nombre desde Blade (fallbacks seguros) ====== */
+const GENDERS_MAP   = @json(isset($genders) ? $genders->pluck('name', 'id') : collect());
+const DOC_TYPES_MAP = @json(
+  isset($documentTypes)
+    ? $documentTypes->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')])
+    : collect()
+);
 
-    function editarUsuario(id) {
-        const user = usuarios.find(u => u.id === id);
-        if (!user) return alert('⚠️ Usuario no encontrado');
+/* ====== Dataset (igual al que usas para la edición) ====== */
+const USUARIOS = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
 
-        document.getElementById('tablaUsuarios').classList.add('hidden');
-        document.getElementById('formularioEdicion').classList.remove('hidden');
-        document.getElementById('mensajeBienvenida')?.classList.add('hidden');
-
-        form.action = `/superadmin/usuarios/${id}`;
-
-        // Relleno base
-        const fields = [...camposRequeridos, ...camposEstudiante, ...camposEmpresa];
-        fields.forEach(field => {
-            if (form[field]) {
-                let value = user[field] ?? '';
-                if (field === 'birthdate' && value) value = new Date(value).toISOString().split('T')[0];
-                form[field].value = value;
-            }
-        });
-
-        // Rol actual (toma el primero)
-        const currentRole = (user.roles && user.roles.length) ? user.roles[0].name : 'user';
-        if (form['role']) form['role'].value = currentRole;
-
-        toggleCamposEspeciales();
-        validarFormulario();
+/* ====== Helpers formato/transformación ====== */
+function formatDateISOtoDMY(iso) {
+  if (!iso) return '';
+  try {
+    const parts = String(iso).split('T')[0].split('-'); // YYYY-MM-DD
+    if (parts.length === 3) {
+      const [y,m,d] = parts;
+      return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
     }
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const dd = String(d.getUTCDate()).padStart(2,'0');
+    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+    const yyyy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch { return iso; }
+}
 
-    function cancelarEdicion() {
-        form.reset();
-        toggleCamposEspeciales();
-        validarFormulario();
-        document.getElementById('formularioEdicion').classList.add('hidden');
-        document.getElementById('tablaUsuarios').classList.remove('hidden');
-        document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
+function buildExportRows(source) {
+  if (!Array.isArray(source)) return [];
+  return source.map(u => {
+    const genero  = (u.gender_id != null)        ? (GENDERS_MAP[String(u.gender_id)] ?? GENDERS_MAP[u.gender_id] ?? '') : '';
+    const docType = (u.document_type_id != null) ? (DOC_TYPES_MAP[String(u.document_type_id)] ?? DOC_TYPES_MAP[u.document_type_id] ?? '') : '';
+    return {
+      'Nombre': (u.first_name ?? ''),
+      'Apellido': (u.last_name ?? ''),
+      'Correo': (u.email ?? ''),
+      'Fecha de nacimiento': formatDateISOtoDMY(u.birthdate ?? ''),
+      'Género': genero,
+      'Tipo de documento': docType,
+      'N.º documento': (u.document_number ?? ''),
+      'Teléfono': (u.phone ?? ''),
+    };
+  });
+}
+
+/* ====== Export a Excel (SheetJS) ====== */
+function exportExcel(rows, fileName = 'usuarios.xlsx') {
+  if (!rows?.length) return alert('No hay datos para exportar.');
+  const ws = XLSX.utils.json_to_sheet(rows, { header: Object.keys(rows[0]) });
+  const colWidths = Object.keys(rows[0]).map(k => ({
+    wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2
+  }));
+  ws['!cols'] = colWidths;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
+  XLSX.writeFile(wb, fileName);
+}
+
+/* ====== Export a PDF (jsPDF + AutoTable) ====== */
+function exportPDF(rows, fileName = 'usuarios.pdf') {
+  if (!rows?.length) return alert('No hay datos para exportar.');
+  const { jsPDF } = window.jspdf || {};
+  const hasJsPDF = typeof jsPDF === 'function';
+  const hasAutoTable = !!(jsPDF && jsPDF.API && typeof jsPDF.API.autoTable === 'function');
+  if (!hasJsPDF || !hasAutoTable) {
+    console.error('jsPDF o autoTable no disponibles', { hasJsPDF, hasAutoTable, jsPDF });
+    alert('Librerías de PDF no disponibles.');
+    return;
+  }
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'A4' });
+  const headers = [Object.keys(rows[0])];
+  const body = rows.map(r => headers[0].map(h => r[h] ?? ''));
+
+  doc.setFontSize(12);
+  doc.text('Usuarios', 40, 40);
+  doc.autoTable({
+    startY: 60,
+    head: headers,
+    body,
+    styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+    headStyles: { fillColor: [41, 98, 255], textColor: 255 },
+    margin: { left: 40, right: 40 },
+    tableWidth: 'auto',
+  });
+
+  doc.save(fileName);
+}
+
+/* ====== DataTable (lista) ====== */
+if (document.getElementById("export-table") && typeof simpleDatatables?.DataTable !== 'undefined') {
+  const table = new simpleDatatables.DataTable("#export-table", {
+    // ⬇️ Plantilla con select de "por página" en la parte superior
+    template: (options, dom) =>
+      "<div class='" + options.classes.top + "'>" +
+        "<div class='flex flex-row items-center justify-between gap-4'>" +
+          (options.paging && options.perPageSelect
+            ? "<div class='flex items-center gap-2'>" +
+              "<label class='flex items-center gap-2'>" +
+              "<select class='" + options.classes.selector + " border-gray-300 rounded-md'></select>" +
+              "<span class='text-sm text-gray-600'>por página</span>" +
+              "</label></div>"
+            : ""
+          ) +
+          "<div class='relative'>" +
+            "<button id='exportDropdownButton' type='button' class='flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none'>Exportar" +
+              "<svg class='ml-1 h-4 w-4' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><path stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m19 9-7 7-7-7'/></svg>" +
+            "</button>" +
+            "<div id='exportDropdown' class='absolute right-0 mt-2 z-10 hidden w-48 rounded-lg bg-white shadow-sm ring-1 ring-black/5'>" +
+              "<ul class='p-2 text-sm text-gray-700' aria-labelledby='exportDropdownButton'>" +
+                "<li><button id='export-excel' class='w-full px-3 py-2 text-left hover:bg-gray-100'>Exportar a Excel</button></li>" +
+                "<li><button id='export-pdf'   class='w-full px-3 py-2 text-left hover:bg-gray-100'>Exportar a PDF</button></li>" +
+              "</ul>" +
+            "</div>" +
+          "</div>" +
+          (options.searchable
+            ? "<div class='" + options.classes.search + " w-64'>" +
+              "<input class='" + options.classes.input + " w-full rounded-md border-gray-300' placeholder='Buscar…' type='search' title='Buscar en la tabla' " + (dom.id ? " aria-controls='" + dom.id + "'" : "") + ">" +
+              "</div>"
+            : ""
+          ) +
+        "</div>" +
+      "</div>" +
+      "<div class='" + options.classes.container + "'></div>" +
+      "<div class='" + options.classes.bottom + "'>" +
+        (options.paging ? "<div class='" + options.classes.info + "'></div>" : "") +
+        "<nav class='" + options.classes.pagination + "'></nav>" +
+      "</div>",
+
+    /* ⬇️ Orden inicial por ID ascendente */
+    columns: [{ select: 0, hidden: true, sort: 'asc' }],
+
+    /* ⬇️ Paginación del plugin: default 100, opciones 50/100/200 */
+    perPage: 100,
+    perPageSelect: [50, 100, 200],
+
+    searchable: true,
+    labels: {
+      placeholder: 'Buscar…',
+      perPage: 'por página',
+      noRows: 'No se encontraron registros',
+      info: 'Mostrando {start}–{end} de {rows}',
+      searchTitle: 'Buscar en la tabla'
     }
+  });
 
-    function toggleCamposEspeciales() {
-        const tipo = parseInt(form['user_type_id'].value);
-        const academic = document.getElementById('academic_section');
-        const empresa = document.getElementById('empresa_section');
-
-        academic.classList.toggle('hidden', tipo !== 4);
-        empresa.classList.toggle('hidden', !(tipo === 2 || tipo === 3));
-
-        if (tipo !== 4) { form['academic_program_id'].value = ''; form['institution_id'].value = ''; }
-        if (!(tipo === 2 || tipo === 3)) { form['company_name'].value = ''; form['company_address'].value = ''; }
-
-        validarFormulario();
+  /* Fallback por si tu versión no soporta array en perPageSelect */
+  table.on('datatable.init', () => {
+    const selector = table.wrapper?.querySelector('select.dataTable-selector');
+    if (!selector) return;
+    // Si el plugin no llenó correctamente, lo re-llenamos
+    const desired = ['50','100','200'];
+    const current = Array.from(selector.options).map(o => o.value);
+    const needFix = desired.join(',') !== current.join(',');
+    if (needFix) {
+      selector.innerHTML = '';
+      desired.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        selector.appendChild(opt);
+      });
     }
+    selector.value = '100';
+    selector.dispatchEvent(new Event('change'));
+  });
 
-    function validarFormulario() {
-        let esValido = true;
+  /* ====== Exportaciones (filtra por búsqueda actual del DataTable) ====== */
+  const btn = document.getElementById('exportDropdownButton');
+  const menu = document.getElementById('exportDropdown');
+  btn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!menu) return;
+    const inside = menu.contains(e.target) || btn.contains(e.target);
+    if (!inside) menu.classList.add('hidden');
+  });
 
-        camposRequeridos.forEach(id => {
-            const el = form[id];
-            if (!el || el.value.trim() === '') esValido = false;
-        });
+  function currentFilter() {
+    const q = document.querySelector('.dataTable-input')?.value?.toLowerCase()?.trim() || '';
+    if (!q) return USUARIOS;
+    return USUARIOS.filter(u =>
+      [u.first_name, u.last_name, u.email, u.document_number, u.phone]
+        .filter(Boolean)
+        .some(v => String(v).toLowerCase().includes(q))
+    );
+  }
 
-        const tipo = parseInt(form['user_type_id'].value);
-        if (tipo === 4) camposEstudiante.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
-        if (tipo === 2 || tipo === 3) camposEmpresa.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
+  document.getElementById('export-excel')?.addEventListener('click', () => {
+    menu?.classList.add('hidden');
+    const rows = buildExportRows(currentFilter());
+    exportExcel(rows, 'usuarios.xlsx');
+  });
 
-        btnActualizar.disabled = !esValido;
-        btnActualizar.classList.toggle('opacity-50', !esValido);
-        btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
+  document.getElementById('export-pdf')?.addEventListener('click', () => {
+    menu?.classList.add('hidden');
+    const rows = buildExportRows(currentFilter());
+    exportPDF(rows, 'usuarios.pdf');
+  });
+}
+
+/* ====== Lógica de edición (SPA dentro del layout) ====== */
+const usuarios = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
+const form = document.getElementById('formEditarUsuario');
+const btnActualizar = document.getElementById('btnActualizar');
+
+const camposRequeridos = ['first_name','last_name','email'];
+const camposEstudiante = ['academic_program_id','institution_id'];
+const camposEmpresa = ['company_name','company_address'];
+
+function showToast(message, type = 'success') {
+  const wrap = document.createElement('div');
+  wrap.className = `pointer-events-auto rounded-md px-4 py-3 shadow-lg text-sm ${type === 'success' ? 'bg-green-600 text-white' : (type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-red-600 text-white')}`;
+  wrap.style.whiteSpace = 'pre-line';
+  wrap.textContent = message;
+  (document.getElementById('toastContainer') || document.body).appendChild(wrap);
+  setTimeout(() => wrap.remove(), 4500);
+}
+
+function editarUsuario(btn) {
+  const id = parseInt(btn.dataset.userId, 10);
+  const updateUrl = btn.dataset.updateUrl;
+
+  const user = Array.isArray(usuarios) ? usuarios.find(u => u.id === id) : null;
+  if (!user) return showToast('⚠️ Usuario no encontrado', 'error');
+
+  document.getElementById('tablaUsuarios').classList.add('hidden');
+  document.getElementById('formularioEdicion').classList.remove('hidden');
+  document.getElementById('mensajeBienvenida')?.classList.add('hidden');
+
+  form.action = updateUrl;
+
+  const allFields = [
+    'first_name','last_name','email','birthdate','document_number','phone',
+    'gender_id','document_type_id','user_type_id',
+    'academic_program_id','institution_id',
+    'company_name','company_address'
+  ];
+  allFields.forEach(field => {
+    if (form[field] !== undefined) {
+      let value = user[field] ?? '';
+      if (field === 'birthdate' && value) {
+        try { value = new Date(value).toISOString().split('T')[0]; } catch (e) {}
+      }
+      form[field].value = (value ?? '').toString();
     }
+  });
 
-    // Seguridad para eliminar
-    function confirmarEliminacion(userId, isSelf, isSuper) {
-        if (isSelf) { alert('No puedes eliminar tu propia cuenta.'); return false; }
-        // Si el objetivo es superadmin, confirmación extra
-        if (isSuper && !confirm('Estás eliminando a un SUPERADMIN. ¿Confirmas?')) return false;
-        return confirm('¿Eliminar este usuario?');
-    }
+  const currentRole = (user.roles && user.roles.length) ? (user.roles[0].name || user.roles[0]) : 'user';
+  if (form['role']) form['role'].value = currentRole;
 
-    // Wiring
-    form.querySelectorAll('input, select').forEach(el => {
-        el.addEventListener('input', validarFormulario);
-        el.addEventListener('change', validarFormulario);
-    });
-    // (El input de búsqueda correcto es #search)
+  toggleCamposEspeciales();
+  validarFormulario();
+}
 
-    document.getElementById('btnClearSearch')?.addEventListener('click', function () {
-    const searchInput = document.getElementById('search');
-    searchInput.value = '';
+function cancelarEdicion() {
+  form.reset();
+  toggleCamposEspeciales();
+  validarFormulario();
+  document.getElementById('formularioEdicion').classList.add('hidden');
+  document.getElementById('tablaUsuarios').classList.remove('hidden');
+  document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
+}
 
-    // Frontend: mostrar todas las filas
-    document.querySelectorAll('.fila-usuario').forEach(fila => fila.style.display = '');
+function toggleCamposEspeciales() {
+  const tipo = parseInt(form['user_type_id']?.value || '0');
+  const academic = document.getElementById('academic_section');
+  const empresa  = document.getElementById('empresa_section');
 
-    // Backend: recargar sin query params (opcional, útil si usas paginación/consulta)
-    window.location.href = window.location.pathname;
-    });
+  if (academic) academic.classList.toggle('hidden', tipo !== 4);
+  if (empresa)  empresa.classList.toggle('hidden', !(tipo === 2 || tipo === 3));
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Inyecta CSS para ocultar la "X" del input search en navegadores Webkit
-        const style = document.createElement('style');
-        style.innerHTML = `
-            input[type="search"]::-webkit-search-cancel-button {
-                -webkit-appearance: none;
-                appearance: none;
-            }
-        `;
-        document.head.appendChild(style);
-    });
+  if (tipo !== 4) {
+    if (form['academic_program_id']) form['academic_program_id'].value = '';
+    if (form['institution_id']) form['institution_id'].value = '';
+  }
+  if (!(tipo === 2 || tipo === 3)) {
+    if (form['company_name']) form['company_name'].value = '';
+    if (form['company_address']) form['company_address'].value = '';
+  }
+}
 
-    validarFormulario();
-</script>
+function validarFormulario() {
+  let esValido = true;
 
-<script>
-document.getElementById('formEditarUsuario').addEventListener('submit', async function (e) {
+  camposRequeridos.forEach(id => {
+    const el = form[id];
+    if (!el || el.value.trim() === '') esValido = false;
+  });
+
+  const tipo = parseInt(form['user_type_id']?.value || '0');
+  if (tipo === 4) {
+    camposEstudiante.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
+  }
+  if (tipo === 2 || tipo === 3) {
+    camposEmpresa.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
+  }
+
+  btnActualizar.disabled = !esValido;
+  btnActualizar.classList.toggle('opacity-50', !esValido);
+  btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
+}
+
+if (form) {
+  form.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('input', validarFormulario);
+    el.addEventListener('change', () => { toggleCamposEspeciales(); validarFormulario(); });
+  });
+
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const form = e.target;
     const formData = new FormData(form);
-
-    // Convertir FormData a objeto para poder mostrarlo en tabla
-    const payload = {};
-    formData.forEach((value, key) => payload[key] = value);
-
-    // Mostrar datos en tabla
-    console.table(payload);
+    formData.set('_method', 'PUT');
+    formData.set('accepted_terms', 1);
 
     try {
-        const response = await axios.post(form.action, formData, {
-            headers: { 'Accept': 'application/json' }
-        });
-        console.log('%c✅ Usuario actualizado correctamente', 'color: green; font-weight: bold;');
-        console.log(response.data); // Opcional: ver respuesta del servidor
-
-        alert('✅ Usuario actualizado correctamente');
-        location.reload();
+      const response = await axios.post(form.action, formData, {
+        headers: { 'Accept': 'application/json' }
+      });
+      showToast('✅ Usuario actualizado correctamente', 'success');
+      setTimeout(() => window.location.reload(), 900);
     } catch (error) {
-        console.error('%c❌ Error en la petición', 'color: red; font-weight: bold;');
-
-        if (error.response) {
-            console.error('Código de estado:', error.response.status);
-            console.error('Respuesta del servidor:', error.response.data);
-
-            if (error.response.status === 422) {
-                console.warn('Errores de validación detectados:');
-                console.table(error.response.data.errors);
-            }
-        } else if (error.request) {
-            console.error('No hubo respuesta del servidor.');
-            console.error(error.request);
-        } else {
-            console.error('Error al configurar la solicitud:', error.message);
-        }
+      if (error.response && error.response.status === 422) {
+        const errs = error.response.data.errors || {};
+        const listado = Object.values(errs).flat().map(m => `• ${m}`).join('\n');
+        showToast('Errores de validación:\n' + listado, 'error');
+      } else if (error.response && error.response.status === 403) {
+        showToast(error.response.data?.message || 'Acción no permitida.', 'error');
+      } else {
+        showToast('❌ Error al actualizar el usuario.', 'error');
+      }
     }
-});
+  });
+}
 </script>
+@endpush
 
-</body>
-</html>
+
+

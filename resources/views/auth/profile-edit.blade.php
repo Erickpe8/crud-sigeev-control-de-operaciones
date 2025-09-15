@@ -1,121 +1,70 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('layouts.panel')
 
-<head>
-    <meta charset="UTF-8">
-    <title>Editar Información del Perfil</title>
-    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-    @php
-// Detecta el panel actual para construir las rutas
-$scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
-    @endphp
+@push('head')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Axios por defecto: CSRF y JSON (imprescindible para 422/500 con errores en JSON)
+        (function () {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (token) axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+            axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+            axios.defaults.headers.common['Accept'] = 'application/json';
+        })();
+    </script>
+@endpush
 
-    @section('content')
-        <div class="container mx-auto p-4">
-            <!-- Mostrar alertas de éxito o error -->
-            @if (session('success'))
-                <div class="flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 dark:border-green-800"
-                    role="alert">
-                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                        fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                            d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-                    </svg>
-                    <div>
-                        <span class="font-medium">Success!</span> {{ session('success') }}
-                    </div>
-                </div>
-            @endif
+@section('content')
+    @php
+        // Determina a qué panel regresar al cancelar (admin o superadmin)
+        $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
+    @endphp
 
-            @if ($errors->any())
-                <div class="flex items-center p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
-                    role="alert">
-                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                        fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                            d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-                    </svg>
-                    <div>
-                        <span class="font-medium">Error!</span> Please check the following issues:
-                        <ul class="list-disc pl-5">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Formulario de edición -->
-            <form method="POST" action="{{ route('profile.update', $user->id) }}" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-
-                <!-- Aquí van los campos del formulario -->
-                <div class="mt-4">
-                    <label for="first_name" class="block text-sm font-medium text-gray-700">Nombre</label>
-                    <input type="text" id="first_name" name="first_name" value="{{ old('first_name', $user->first_name) }}"
-                        class="w-full border border-gray-300 rounded-lg p-2" required>
-                </div>
-
-                <!-- Agrega los demás campos aquí... -->
-
-                <button type="submit" class="mt-4 px-6 py-2 text-white bg-blue-600 rounded-lg">Guardar cambios</button>
-            </form>
-        </div>
-    @endsection
-
-    <form id="editUserForm" class="w-[720px] bg-white rounded-lg shadow-lg p-6 relative"
+    {{-- Formulario AJAX para editar mi perfil --}}
+    <form id="editProfileForm" class="w-[720px] mx-auto bg-white rounded-lg shadow-lg p-6 relative"
         action="{{ route('profile.update', auth()->user()->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
-        <!-- Cabecera decorativa -->
+        {{-- Cabecera decorativa --}}
         <div class="relative h-6 bg-[#ff0000] rounded-t-lg">
             <svg class="absolute top-full left-0 w-full" viewBox="0 0 1440 100" preserveAspectRatio="none">
-                <path fill="#ffffff" d="M0,0 C480,100 960,0 1440,100 L1440,0 L0,0 Z"></path>
+                <path fill="#ffffff" d="M0,0 C480,100 960,0 1440,100 L1440,0 L0,0 Z" />
             </svg>
         </div>
 
         <h2 class="text-2xl font-bold mt-6 mb-4 text-center text-gray-800">Editar mi Información</h2>
 
-        <!-- Datos personales -->
+        {{-- Datos personales --}}
         <div class="grid gap-4 mb-6 md:grid-cols-2">
             <div>
                 <label for="first_name" class="block mb-2 text-sm font-medium text-gray-900">Nombres</label>
                 <input type="text" id="first_name" name="first_name"
                     value="{{ old('first_name', auth()->user()->first_name) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="Nombres">
             </div>
             <div>
                 <label for="last_name" class="block mb-2 text-sm font-medium text-gray-900">Apellidos</label>
-                <input type="text" id="last_name" name="last_name"
-                    value="{{ old('last_name', auth()->user()->last_name) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                <input type="text" id="last_name" name="last_name" value="{{ old('last_name', auth()->user()->last_name) }}"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="Apellidos">
             </div>
             <div class="md:col-span-2">
                 <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Correo Electrónico</label>
                 <input type="email" id="email" name="email" value="{{ old('email', auth()->user()->email) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="ejemplo@correo.com">
             </div>
         </div>
 
-        <!-- Documento y tipo -->
+        {{-- Documento y tipo --}}
         <div class="grid gap-4 mb-6 md:grid-cols-3">
             <div>
                 <label for="user_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de Usuario</label>
                 <select id="user_type_id" name="user_type_id"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($userTypes as $type)
                         <option value="{{ $type->id }}" {{ auth()->user()->user_type_id == $type->id ? 'selected' : '' }}>
@@ -125,10 +74,9 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
                 </select>
             </div>
             <div>
-                <label for="document_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de
-                    Documento</label>
+                <label for="document_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de Documento</label>
                 <select id="document_type_id" name="document_type_id"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($documentTypes as $doc)
                         <option value="{{ $doc->id }}" {{ auth()->user()->document_type_id == $doc->id ? 'selected' : '' }}>
@@ -142,19 +90,19 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
                     Documento</label>
                 <input type="text" id="document_number" name="document_number"
                     value="{{ old('document_number', auth()->user()->document_number) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="1234567890">
             </div>
         </div>
 
-        <!-- Campos adicionales reactivos -->
-        <div id="academic_section" class="col-span-2 hidden">
-            <div class="mb-4">
-                <label for="academic_program_id" class="block text-sm font-medium text-gray-700">Programa
+        {{-- Secciones condicionales (estudiante / empresa) --}}
+        <div id="academic_section" class="grid gap-4 mb-6 md:grid-cols-2 hidden">
+            <div>
+                <label for="academic_program_id" class="block mb-2 text-sm font-medium text-gray-900">Programa
                     Académico</label>
                 <select id="academic_program_id" name="academic_program_id"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
-                    <option value="">Seleccione</option>
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <option value="">Selecciona</option>
                     @foreach ($academicPrograms as $program)
                         <option value="{{ $program->id }}" {{ old('academic_program_id', auth()->user()->academic_program_id) == $program->id ? 'selected' : '' }}>
                             {{ $program->name }}
@@ -163,10 +111,10 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
                 </select>
             </div>
             <div>
-                <label for="institution_id" class="block text-sm font-medium text-gray-700">Institución</label>
+                <label for="institution_id" class="block mb-2 text-sm font-medium text-gray-900">Institución</label>
                 <select id="institution_id" name="institution_id"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
-                    <option value="">Seleccione</option>
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <option value="">Selecciona</option>
                     @foreach ($institutions as $inst)
                         <option value="{{ $inst->id }}" {{ old('institution_id', auth()->user()->institution_id) == $inst->id ? 'selected' : '' }}>
                             {{ $inst->name }}
@@ -176,28 +124,28 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
             </div>
         </div>
 
-        <div id="empresa_section" class="col-span-2 hidden">
-            <div class="mb-4">
-                <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+        <div id="empresa_section" class="grid gap-4 mb-6 md:grid-cols-2 hidden">
+            <div>
+                <label for="company_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre de la Empresa</label>
                 <input type="text" id="company_name" name="company_name"
                     value="{{ old('company_name', auth()->user()->company_name) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
             <div>
-                <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la
+                <label for="company_address" class="block mb-2 text-sm font-medium text-gray-900">Dirección de la
                     Empresa</label>
                 <input type="text" id="company_address" name="company_address"
                     value="{{ old('company_address', auth()->user()->company_address) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
         </div>
 
-        <!-- Campos adicionales -->
+        {{-- Campos adicionales --}}
         <div class="grid gap-4 mb-6 md:grid-cols-3">
             <div>
                 <label for="gender_id" class="block mb-2 text-sm font-medium text-gray-900">Sexo</label>
                 <select id="gender_id" name="gender_id"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($genders as $gender)
                         <option value="{{ $gender->id }}" {{ auth()->user()->gender_id == $gender->id ? 'selected' : '' }}>
@@ -209,343 +157,300 @@ $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
             <div>
                 <label for="phone" class="block mb-2 text-sm font-medium text-gray-900">Teléfono</label>
                 <input type="text" id="phone" name="phone" value="{{ old('phone', auth()->user()->phone) }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="3101234567">
             </div>
             <div>
                 <label for="birthdate" class="block mb-2 text-sm font-medium text-gray-900">Fecha de Nacimiento</label>
                 <input type="text" id="birthdate" name="birthdate"
                     value="{{ old('birthdate', $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->format('d/m/Y') : '') }}"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="dd/mm/aaaa">
             </div>
         </div>
 
-        <!-- Foto de perfil -->
+        {{-- Foto de perfil --}}
         <div class="mb-6">
             <label for="photo" class="block mb-2 text-sm font-medium text-gray-900">Foto de Perfil</label>
-            <input type="file" id="photo" name="photo"
-                class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
-            @if(auth()->user()->photo)
-                <img src="{{ asset('storage/' . auth()->user()->photo) }}" alt="Foto de Perfil"
-                    class="mt-4 h-32 w-32 rounded-full object-cover">
+            <div class="flex items-center gap-4">
+                <input type="file" id="photo" name="photo" accept="image/png,image/jpeg,image/jpg,image/webp"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 flex-1">
+                @if(auth()->user()->profile_photo)
+                    <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}" alt="Foto de Perfil"
+                        class="h-24 w-24 rounded-full object-cover border" id="previewPhoto">
+                @endif
+            </div>
+            {{-- Opción para eliminar la foto actual --}}
+            @if(auth()->user()->profile_photo)
+                <div class="mt-2 flex items-center gap-2">
+                    <input type="checkbox" id="remove_photo" name="remove_photo" value="1" class="h-4 w-4 text-red-600">
+                    <label for="remove_photo" class="text-sm text-gray-700">Eliminar foto actual</label>
+                </div>
             @endif
         </div>
 
-        <!-- Restablecer Contraseña -->
-        <div class="col-span-2 mt-6">
-            <h3 class="text-lg font-semibold text-gray-700 mb-4">Restablecer Contraseña</h3>
+        {{-- Restablecer contraseña --}}
+        <div class="grid gap-4 mb-6 md:grid-cols-2">
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
+                <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Nueva Contraseña</label>
                 <input type="password" id="password" name="password"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="Nueva contraseña">
             </div>
-
-            <div class="mt-4">
-                <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar
+            <div>
+                <label for="password_confirmation" class="block mb-2 text-sm font-medium text-gray-900">Confirmar
                     Contraseña</label>
                 <input type="password" id="password_confirmation" name="password_confirmation"
-                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     placeholder="Confirmar nueva contraseña">
             </div>
         </div>
-
-        <!-- Botones -->
+        
+        {{-- Botones --}}
         <div class="flex gap-4 mt-6">
-            <button type="submit" id="btnActualizar" onclick="disableButton()"
-                class="bg-[#ff0000] text-white px-6 py-2 rounded w-full opacity-50 cursor-not-allowed">
+            <button type="submit" id="btnUpdate"
+                class="flex items-center justify-center gap-2 bg-[#ff0000] text-white px-6 py-2 rounded w-full opacity-50 cursor-not-allowed">
                 Actualizar Información
             </button>
-            <a href="{{ route('panel') }}" class="bg-gray-600 text-white px-6 py-2 rounded w-full text-center">
+            @php $dashUrl = route('dashboards.' . $scope); @endphp
+            <a href="{{ $dashUrl }}"
+                class="flex items-center justify-center gap-2 bg-gray-600 text-white px-6 py-2 rounded w-full">
                 Cancelar
             </a>
         </div>
 
-        <!-- Pie decorativo -->
+        {{-- Pie decorativo --}}
         <div class="relative h-6 mt-6 bg-[#ff0000] rounded-b-lg">
             <svg class="absolute top-0 left-0 w-full" viewBox="0 0 1440 100" preserveAspectRatio="none">
-                <path fill="#ffffff" d="M0,100 C480,0 960,100 1440,0 L1440,100 L0,100 Z"></path>
+                <path fill="#ffffff" d="M0,100 C480,0 960,100 1440,0 L1440,100 L0,100 Z" />
             </svg>
         </div>
     </form>
+@endsection
 
+@push('scripts')
     <script>
-        // ====== BASE ORIGINAL ======
-        // Lógica para habilitar el botón de actualización solo si los campos son válidos
-        const formInputs = document.querySelectorAll('#editUserForm input, #editUserForm select');
-        const btnActualizar = document.getElementById('btnActualizar');
-
-        // Activar/desactivar campos según el tipo de usuario
-        document.getElementById('user_type_id').addEventListener('change', function () {
-            const tipo = this.value;
-            const academicSection = document.getElementById('academic_section');
-            const empresaSection = document.getElementById('empresa_section');
-
-            console.log("📌 Cambio de tipo de usuario:", tipo);
-
-            if (tipo == 4) { // Estudiantes
-                academicSection.classList.remove('hidden');
-                empresaSection.classList.add('hidden');
-                console.log("➡️ Se muestra sección académica");
-            } else if (tipo == 2 || tipo == 3) { // Empresas
-                empresaSection.classList.remove('hidden');
-                academicSection.classList.add('hidden');
-                console.log("➡️ Se muestra sección empresa");
-            } else {
-                academicSection.classList.add('hidden');
-                empresaSection.classList.add('hidden');
-                console.log("➡️ No se muestra sección adicional");
+        // ====== Alertas tipo banda sobrepuestas (global root en <body>) ======
+        function getAlertRoot() {
+            let root = document.getElementById('alert-root-global');
+            if (!root) {
+                root = document.createElement('div');
+                root.id = 'alert-root-global';
+                root.setAttribute('aria-live', 'polite');
+                root.setAttribute('aria-atomic', 'true');
+                root.className = "fixed top-16 right-4 z-[2147483647] w-[min(92vw,560px)] space-y-3 pointer-events-auto";
+                root.style.isolation = 'isolate';
+                document.body.appendChild(root);
             }
-        });
+            return root;
+        }
 
-        // Ejecutar al cargar la página para mostrar/hide los campos reactivos según el tipo
-        document.getElementById('user_type_id').dispatchEvent(new Event('change'));
+        function pushAlert(type = 'info', title = '', message = '', opts = {}) {
+            const root = getAlertRoot();
+            const PALETTES = {
+                info: 'text-blue-800 border border-blue-300 rounded-lg bg-blue-50',
+                success: 'text-green-800 border border-green-300 rounded-lg bg-green-50',
+                error: 'text-red-800 border border-red-300 rounded-lg bg-red-50',
+                warning: 'text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50',
+                neutral: 'text-gray-800 border border-gray-300 rounded-lg bg-gray-50',
+            };
+            const cls = PALETTES[type] || PALETTES.info;
+            const wrapper = document.createElement('div');
+            wrapper.setAttribute('role', 'alert');
+            wrapper.className = `flex items-start p-4 ${cls} shadow-lg rounded-lg`;
+            const iconSvg = `
+        <svg class="shrink-0 inline w-4 h-4 me-3 mt-0.5" aria-hidden="true"
+             xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+        </svg>`;
+            const closeBtn = `
+        <button type="button" class="ml-auto ms-3 inline-flex items-center justify-center rounded p-1 hover:bg-black/5 focus:outline-none" aria-label="Cerrar alerta">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>`;
+            wrapper.innerHTML = `${iconSvg}<span class="sr-only">Info</span><div class="text-sm leading-5">${title ? `<span class=\"font-medium\">${title}</span> ` : ''}<span class="inline">${message}</span></div>${closeBtn}`;
+            wrapper.querySelector('button')?.addEventListener('click', () => wrapper.remove());
+            wrapper.style.opacity = '0';
+            wrapper.style.transform = 'translateY(-6px)';
+            root.appendChild(wrapper);
+            requestAnimationFrame(() => {
+                wrapper.style.transition = 'opacity .2s ease, transform .2s ease';
+                wrapper.style.opacity = '1';
+                wrapper.style.transform = 'translateY(0)';
+            });
+            const timeout = Number.isFinite(opts.timeout) ? opts.timeout : 0;
+            if (timeout > 0) setTimeout(() => {
+                wrapper.style.opacity = '0';
+                wrapper.style.transform = 'translateY(-6px)';
+                setTimeout(() => wrapper.remove(), 200);
+            }, timeout);
+        }
 
-        // Función para validar el formulario
-        function validarFormulario() {
-            let formValido = true;
-            let camposEstado = [];
+        // ====== Lógica del formulario ======
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('editProfileForm');
+            const btn = document.getElementById('btnUpdate');
+            const inputs = form.querySelectorAll('input[name], select[name]');
+            const initial = {};
 
-            formInputs.forEach(input => {
-                let valido = true;
+            // Snapshot inicial
+            inputs.forEach(el => {
+                initial[el.name] = (el.type === 'file') ? null : el.value;
+            });
 
-                // Validar si el campo es requerido y no está vacío
-                if (input.required && !input.value.trim()) {
-                    valido = false;
-                    formValido = false;
-                }
+            // Mostrar/ocultar secciones
+            function toggleSections() {
+                const tipo = parseInt(document.getElementById('user_type_id').value);
+                document.getElementById('academic_section').classList.toggle('hidden', tipo !== 4);
+                document.getElementById('empresa_section').classList.toggle('hidden', !(tipo === 2 || tipo === 3));
+            }
+            toggleSections();
+            document.getElementById('user_type_id').addEventListener('change', toggleSections);
 
-                // Verificar si los campos de contraseña coinciden
-                if (input.name === 'password') {
-                    const passwordConfirmation = document.getElementById('password_confirmation');
-                    if (passwordConfirmation && passwordConfirmation.value.trim() !== input.value.trim()) {
-                        valido = false;
-                        formValido = false;
-                    }
-                }
-
-                // Almacenar el estado de cada campo
-                camposEstado.push({
-                    name: input.name,
-                    value: input.value,
-                    requerido: input.required,
-                    valido: valido
+            // Validación mínima
+            function checkForm() {
+                let valid = true; const messages = [];
+                ['first_name', 'last_name', 'email'].forEach(name => {
+                    const el = form.querySelector(`[name="${name}"]`);
+                    if (el && !el.value.trim()) valid = false;
                 });
-            });
-
-            // Mostrar los resultados en la consola como una tabla
-            console.table(camposEstado);
-            console.log("✅ ¿Formulario válido?:", formValido);
-
-            // Activar/desactivar el botón de acuerdo con la validez
-            btnActualizar.disabled = !formValido;
-            btnActualizar.classList.toggle('opacity-50', !formValido);
-            btnActualizar.classList.toggle('cursor-not-allowed', !formValido);
-
-            return { formValido, camposEstado };
-        }
-
-        // Función para limpiar los campos vacíos antes de enviar
-        function limpiarCamposVacios() {
-            let payload = {};
-
-            formInputs.forEach(input => {
-                // Solo agregar el campo si no está vacío
-                if (input.value.trim() !== "") {
-                    // Solo agregar el campo de contraseña si ambos campos (password y password_confirmation) no están vacíos
-                    if (input.name === 'password' && input.value.trim() !== '' && document.getElementById('password_confirmation').value.trim() !== '') {
-                        payload['password'] = input.value;
-                    } else {
-                        payload[input.name] = input.value;
-                    }
+                // email
+                const emailVal = form['email'].value.trim();
+                if (emailVal) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(emailVal)) { valid = false; messages.push('El correo electrónico no es válido.'); }
                 }
-            });
-
-            // Ahora 'payload' tiene solo los campos válidos
-            return payload;
-        }
-
-        // Añadir los eventos para validar el formulario
-        formInputs.forEach(input => {
-            input.addEventListener('input', validarFormulario);
-            input.addEventListener('change', validarFormulario);
-        });
-
-        // Llamada inicial para validar el formulario al cargar
-        validarFormulario();
-
-
-        // ====== EXTENSIÓN: try/catch para saber qué datos NO pasan al controlador ======
-        // Utilidades mínimas para pintar errores de validación del backend (422)
-        function clearFieldErrors(form) {
-            form.querySelectorAll('.ring-2').forEach(i => i.classList.remove('ring-2', 'ring-red-400'));
-            form.querySelectorAll('[data-error-label="true"]').forEach(l => l.remove());
-        }
-        function setFieldErrors(form, errors) {
-            Object.entries(errors).forEach(([field, msgs]) => {
-                const input = form.querySelector(`[name="${field}"]`);
-                if (!input) return;
-                input.classList.add('ring-2', 'ring-red-400');
-                const label = document.createElement('div');
-                label.dataset.errorLabel = "true";
-                label.className = 'text-xs text-red-600 mt-1';
-                label.textContent = msgs.join(' ');
-                input.insertAdjacentElement('afterend', label);
-            });
-        }
-
-        // ====== NUEVO: limpiar FormData (no enviar vacíos) ======
-        function limpiarFormData(fd) {
-            // Reconstituye el FormData preservando múltiples valores (e.g., roles[])
-            const limpio = new FormData();
-            const omitidos = new Set();
-
-            // Recolectamos todas las keys únicas
-            const keys = Array.from(fd.keys());
-
-            keys.forEach((key) => {
-                const valores = fd.getAll(key);
-                let agregóAlguno = false;
-
-                valores.forEach((valor) => {
-                    // Si es archivo, solo enviar si tiene tamaño (>0)
-                    if (valor instanceof File) {
-                        if (valor && valor.size > 0) {
-                            limpio.append(key, valor);
-                            agregóAlguno = true;
-                        }
-                        return;
-                    }
-                    // Para strings u otros: trim y omitir vacíos
-                    const str = String(valor ?? '').trim();
-                    if (str !== '') {
-                        limpio.append(key, valor);
-                        agregóAlguno = true;
-                    }
-                });
-
-                if (!agregóAlguno) {
-                    omitidos.add(key);
+                // birthdate dd/mm/aaaa no futura
+                const birthRaw = form['birthdate'].value.trim();
+                if (birthRaw) {
+                    const m = birthRaw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (m) {
+                        const d = parseInt(m[1], 10), mo = parseInt(m[2], 10) - 1, y = parseInt(m[3], 10);
+                        const dt = new Date(y, mo, d), now = new Date();
+                        if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) { valid = false; messages.push('La fecha de nacimiento no es válida.'); }
+                        else if (dt > now) { valid = false; messages.push('La fecha de nacimiento no puede ser futura.'); }
+                    } else { valid = false; messages.push('La fecha de nacimiento debe tener el formato dd/mm/aaaa.'); }
                 }
-            });
-
-            // Loguea qué campos se omiten (quedan “como estaban” en el backend)
-            if (omitidos.size) {
-                console.log('🧹 Campos omitidos por venir vacíos (no se envían):', Array.from(omitidos));
+                // password
+                const pass = form['password'].value; const passConf = form['password_confirmation'].value;
+                if (pass || passConf) {
+                    if (pass !== passConf) { valid = false; messages.push('Las contraseñas no coinciden.'); }
+                    if (pass.length < 10 || pass.length > 100) { valid = false; messages.push('La contraseña debe tener entre 10 y 100 caracteres.'); }
+                    const lower = /[a-z]/, special = /[!@#\?]/;
+                    if (!lower.test(pass) || !special.test(pass)) { valid = false; messages.push('La contraseña debe contener una letra minúscula y un carácter especial (! @ # ?).'); }
+                }
+                btn.disabled = !valid;
+                btn.classList.toggle('opacity-50', !valid);
+                btn.classList.toggle('cursor-not-allowed', !valid);
+                // Mensaje breve en cambios/blur
+                if (!valid && messages.length && this && this.eventPhase) {
+                    pushAlert('error', 'Error de validación', messages[0], { timeout: 6000 });
+                }
+                return valid;
             }
+            checkForm();
+            inputs.forEach(el => { el.addEventListener('change', checkForm); el.addEventListener('blur', checkForm); });
 
-            return limpio;
-        }
-
-        // Envío con Axios capturando 422 (qué campos no pasan) + limpieza de vacíos
-        (function setupEnvio() {
-            const form = document.getElementById('editUserForm');
-            if (!form) return;
-
-            // Configuración CSRF si existe meta (Laravel)
-            if (typeof axios !== 'undefined') {
-                const csrf = document.querySelector('meta[name="csrf-token"]');
-                if (csrf) {
-                    axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-                    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf.getAttribute('content');
-                }
-            } else {
-                console.warn('Axios no está disponible. Incluye su script antes de este bloque.');
-                return;
-            }
-
+            // Envío
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                clearFieldErrors(form);
+                // Limpia errores previos
+                form.querySelectorAll('[data-error-label="true"]').forEach(n => n.remove());
+                form.querySelectorAll('.ring-red-400').forEach(n => n.classList.remove('ring-2', 'ring-red-400'));
 
-                const { formValido } = validarFormulario();
+                const validSubmit = checkForm();
+                if (!validSubmit) return;
 
-                // Construir y loguear payload ANTES de limpiar
-                let fd = new FormData(form);
-                const payloadOriginal = {};
-                fd.forEach((v, k) => payloadOriginal[k] = v);
-                console.log("📨 Payload (original) a enviar:", payloadOriginal);
+                // Construye FormData sólo con cambios
+                const fd = new FormData();
+                let cambios = 0;
+                inputs.forEach(el => {
+                    const name = el.name; if (!name) return;
+                    if (el.type === 'file') {
+                        const file = el.files && el.files[0];
+                        if (file) { fd.append(name, file); cambios++; }
+                        return;
+                    }
+                    if (el.type === 'checkbox') {
+                        if (el.checked) { fd.append(name, el.value); cambios++; }
+                        return;
+                    }
+                    const val = el.value.trim();
+                    const prev = initial[name] ?? '';
+                    if (val !== prev) {
+                        if (name === 'birthdate' && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+                            const [d, m, y] = val.split('/');
+                            fd.append(name, `${y}-${m}-${d}`);
+                        } else {
+                            fd.append(name, val);
+                        }
+                        cambios++;
+                    }
+                });
 
-                if (!formValido) {
-                    console.warn("❌ Formulario inválido en cliente. Corrige los campos requeridos antes de enviar.");
-                    return;
-                }
+                if (cambios === 0) { pushAlert('neutral', 'Sin cambios', 'No hay cambios para guardar.', { timeout: 4000 }); return; }
 
-                // 🔥 Limpia campos vacíos para “saltar” lo no enviado
-                fd = limpiarFormData(fd);
+                fd.append('_method', 'PUT');
 
-                // Spoofing PUT tras limpiar (para no duplicar _method)
-                if (!fd.has('_method')) fd.append('_method', 'PUT');
-
-                // Log del payload definitivo
-                const payloadLimpio = {};
-                fd.forEach((v, k) => payloadLimpio[k] = (v instanceof File ? `(File:${v.name},${v.size}B)` : v));
-                console.log("📨 Payload (limpio) a enviar:", payloadLimpio);
-
-                // Estado loading en botón
-                const originalText = btnActualizar.textContent;
-                btnActualizar.disabled = true;
-                btnActualizar.textContent = 'Actualizando…';
+                // loading
+                const originalText = btn.textContent;
+                btn.disabled = true; btn.textContent = 'Actualizando…'; btn.classList.add('opacity-75');
 
                 try {
-                    // Usa la action del form o define una por defecto
-                    const url = form.getAttribute('action') || '/users/1';
+                    const url = form.getAttribute('action');
+                    const response = await axios.post(url, fd, {
+                        headers: { 'Accept': 'application/json' },
+                        onUploadProgress: (ev) => { if (ev.total) { const p = Math.round((ev.loaded * 100) / ev.total); btn.textContent = `Actualizando… ${p}%`; } }
+                    });
+                    const res = response.data; const message = res?.message || 'Perfil actualizado correctamente.';
+                    pushAlert('success', 'Actualizado', message, { timeout: 1800 });
+                    setTimeout(() => { window.location.href = "{{ route('panel') }}"; }, 1500);
 
-                    const res = await axios.post(url, fd, { headers: { 'Accept': 'application/json' } });
-                    console.log("✅ Respuesta OK del backend:", res.data);
-
+                    // Actualiza snapshot
+                    fd.forEach((v, k) => {
+                        if (k === '_method') return;
+                        if (k === 'birthdate') {
+                            const parts = String(v).split('-');
+                            if (parts.length === 3) { initial[k] = `${parts[2]}/${parts[1]}/${parts[0]}`; form[k].value = initial[k]; }
+                        } else if (k === 'photo') {
+                            const file = v; if (file instanceof File) {
+                                const reader = new FileReader(); reader.onload = e => { const img = document.getElementById('previewPhoto'); if (img) img.src = e.target.result; }; reader.readAsDataURL(file);
+                            }
+                            initial[k] = '';
+                        } else {
+                            initial[k] = String(v); form[k].value = String(v);
+                        }
+                    });
                 } catch (error) {
                     if (error.response && error.response.status === 422) {
-                        // Laravel devuelve { errors: { campo: [mensaje1, mensaje2...] } }
                         const errors = error.response.data?.errors || {};
-                        const camposConError = Object.keys(errors);
-
-                        console.group("❌ Errores de validación del backend");
-                        camposConError.forEach(campo => {
-                            console.error(`Campo '${campo}' →`, errors[campo].join(' | '));
+                        const flat = Object.values(errors).flat().map(m => `• ${m}`);
+                        pushAlert('error', 'Revisa los campos', flat.slice(0, 3).join('<br>'), { timeout: 6500 });
+                        Object.entries(errors).forEach(([field, msgs]) => {
+                            const el = form.querySelector(`[name="${field}"]`); if (!el) return;
+                            el.classList.add('ring-2', 'ring-red-400');
+                            const label = document.createElement('div');
+                            label.className = 'text-xs text-red-600 mt-1';
+                            label.setAttribute('data-error-label', 'true');
+                            label.textContent = msgs.join(' ');
+                            const old = el.parentNode.querySelector('[data-error-label="true"]'); if (old) old.remove();
+                            el.insertAdjacentElement('afterend', label);
                         });
-                        console.groupEnd();
-
-                        // Aviso rápido en UI
-                        alert(
-                            "Los siguientes campos tienen problemas:\n" +
-                            camposConError.map(c => `• ${c}: ${errors[c].join(' | ')}`).join('\n')
-                        );
-
-                        // Pintar errores junto a cada input (tu helper)
-                        setFieldErrors(form, errors);
-
-                    } else if (error.response && error.response.status === 500) {
-                        // Cuando tu backend devuelve error inesperado con debug activo
-                        const detalle = error.response.data?.error || 'Error interno';
-                        const excepcion = error.response.data?.exception || 'Desconocida';
-
-                        console.error("💥 Error 500 en el servidor:", excepcion, detalle);
-                        alert(`Error interno en el servidor: ${excepcion} → ${detalle}`);
+                    } else if (error.response) {
+                        const data = error.response.data || {}; let html = data.message || 'Ocurrió un error inesperado.';
+                        if (data.error_id) { html += `<div class="text-xs mt-2 opacity-70">ID: ${data.error_id}</div>`; }
+                        if (data.exception || data.error) { const ex = data.exception || ''; const errMsg = data.error || ''; html += `<div class="text-xs mt-1 opacity-70">${ex} ${errMsg}</div>`; }
+                        pushAlert('error', 'Error', html, { timeout: 7000 });
                     } else {
-                        console.error("⚠️ Error inesperado al enviar:", error);
-                        alert('Ocurrió un error inesperado al actualizar.');
+                        console.error('Error inesperado:', error);
+                        pushAlert('error', 'Error inesperado', 'Ocurrió un error inesperado al actualizar.', { timeout: 7000 });
                     }
                 } finally {
-                    btnActualizar.disabled = false;
-                    btnActualizar.textContent = originalText;
+                    btn.disabled = false; btn.textContent = originalText; btn.classList.remove('opacity-75');
                 }
-
-                function disableButton() {
-                    var btn = document.getElementById('btnActualizar');
-                    btn.disabled = true;  // Desactiva el botón para evitar clics múltiples
-                    btn.innerHTML = "Actualizando...";  // Cambia el texto para que el usuario vea que está en proceso
-                    btn.classList.add('opacity-75');  // Cambia la opacidad para indicar que el botón está desactivado
-                    btn.classList.remove('cursor-not-allowed');  // Cambia el cursor para mostrar que ya no es clickeable
-                }
-
-
             });
-        })();
+        });
     </script>
-
-</body>
-
-</html>
+@endpush
