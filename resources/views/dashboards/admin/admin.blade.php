@@ -189,13 +189,16 @@ $camposTexto = [
 @push('scripts')
       <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
       <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-      {{-- Excel / PDF --}}
       <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.2/dist/jspdf.plugin.autotable.min.js"></script>
 
       <script>
-      /* ====== CSRF + Debug Axios ====== */
+      /**
+       * Configura CSRF en Axios y, si ?debug=1, añade interceptores de log.
+       * @param — sin parámetros (IIFE autoejecutable).
+       * @returns {void} No devuelve valor; solo configura axios.
+       */
       (function setupAxios() {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         if (token) axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
@@ -218,14 +221,15 @@ $camposTexto = [
         );
       })();
 
-      /* ====== Maps desde Blade ====== */
       const GENDERS_MAP   = @json(($genders ?? collect())->pluck('name', 'id'));
       const DOC_TYPES_MAP = @json(($documentTypes ?? collect())->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')]));
-
-      /* ====== Dataset original (para export/edición) ====== */
       const USUARIOS = @json($users);
 
-      /* ====== Toast UI ====== */
+      /**
+       * Muestra un toast sencillo en la esquina superior derecha.
+       * @param {string} message Texto a mostrar; @param {'success'|'warning'|'error'} [type='success'] tipo visual.
+       * @returns {void} Inserta el toast y lo remueve automáticamente.
+       */
       function showToast(message, type = 'success') {
         const wrap = document.createElement('div');
         wrap.className = `pointer-events-auto rounded-md px-4 py-3 shadow-lg text-sm ${type==='success'?'bg-green-600 text-white':type==='warning'?'bg-yellow-500 text-white':'bg-red-600 text-white'}`;
@@ -235,6 +239,11 @@ $camposTexto = [
         setTimeout(()=>wrap.remove(), 4500);
       }
 
+      /**
+       * Marca un campo con error y muestra/oculta el mensaje asociado.
+       * @param {string} id ID del input/select; @param {string} [msg=''] Mensaje de error o vacío para limpiar.
+       * @returns {void} Ajusta clases, aria-invalid y el help text.
+       */
       function setFieldError(id, msg='') {
         const el = document.getElementById(id);
         if (!el) return;
@@ -252,7 +261,11 @@ $camposTexto = [
         if (help) { help.textContent = msg; if (!msg) help.remove(); }
       }
 
-      /* ====== Helpers de export ====== */
+      /**
+       * Convierte una fecha ISO a cadena dd/mm/yyyy.
+       * @param {string} iso Fecha ISO o similar.
+       * @returns {string} Fecha formateada dd/mm/yyyy o cadena original si falla.
+       */
       function formatDateISOtoDMY(iso) {
         if (!iso) return '';
         try {
@@ -266,6 +279,11 @@ $camposTexto = [
         } catch { return iso; }
       }
 
+      /**
+       * Construye filas planas para exportar desde el dataset de usuarios.
+       * @param {Array<Object>} source Arreglo de usuarios.
+       * @returns {Array<Object>} Filas con claves legibles para Excel/PDF.
+       */
       function buildExportRows(source) {
         if (!Array.isArray(source)) return [];
         return source.map(u => {
@@ -284,6 +302,11 @@ $camposTexto = [
         });
       }
 
+      /**
+       * Exporta a Excel usando SheetJS a partir de filas JSON.
+       * @param {Array<Object>} rows Filas a exportar; @param {string} [fileName='usuarios.xlsx'] nombre del archivo.
+       * @returns {void} Descarga el archivo xlsx en el navegador.
+       */
       function exportExcel(rows, fileName = 'usuarios.xlsx') {
         if (!rows?.length) return alert('No hay datos para exportar.');
         const ws = XLSX.utils.json_to_sheet(rows, { header: Object.keys(rows[0]) });
@@ -291,6 +314,11 @@ $camposTexto = [
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Usuarios'); XLSX.writeFile(wb, fileName);
       }
 
+      /**
+       * Exporta a PDF con jsPDF + autoTable.
+       * @param {Array<Object>} rows Filas a exportar; @param {string} [fileName='usuarios.pdf'] nombre del archivo.
+       * @returns {void} Descarga el archivo pdf en el navegador.
+       */
       function exportPDF(rows, fileName = 'usuarios.pdf') {
         if (!rows?.length) return alert('No hay datos para exportar.');
         const { jsPDF } = window.jspdf || {};
@@ -305,9 +333,13 @@ $camposTexto = [
         doc.save(fileName);
       }
 
-      /* ====== simple-datatables ====== */
       let datatable = null;
       if (document.getElementById('usuarios-table') && typeof simpleDatatables?.DataTable !== 'undefined') {
+        /**
+         * Inicializa la tabla con simple-datatables y UI de exportación/búsqueda.
+         * @param — sin parámetros (invocación directa si existe #usuarios-table).
+         * @returns {void} Configura plantilla, labels y paginación.
+         */
         datatable = new simpleDatatables.DataTable('#usuarios-table', {
           template: (options, dom) =>
             "<div class='" + options.classes.top + "'>" +
@@ -349,7 +381,11 @@ $camposTexto = [
           }
         });
 
-        // Forzar opciones 50/100/200 + default 100
+        /**
+         * Ajusta el selector de filas por página y fuerza 100 por defecto.
+         * @param — evento interno datatable.init.
+         * @returns {void} Reemplaza opciones y dispara change.
+         */
         datatable.on('datatable.init', () => {
           const selector = datatable.wrapper?.querySelector('select.dataTable-selector');
           if (!selector) return;
@@ -362,15 +398,14 @@ $camposTexto = [
           selector.value = '100'; selector.dispatchEvent(new Event('change'));
         });
 
-        // Export (respeta buscador actual)
         const btn = document.getElementById('exportDropdownButton');
         const menu = document.getElementById('exportDropdown');
-        btn?.addEventListener('click', (e) => { e.stopPropagation(); menu?.classList.toggle('hidden'); });
-        document.addEventListener('click', (e) => {
-          if (!menu) return; const inside = menu.contains(e.target) || btn.contains(e.target);
-          if (!inside) menu.classList.add('hidden');
-        });
 
+        /**
+         * Devuelve el dataset filtrado según el término de búsqueda.
+         * @param — sin parámetros (lee el input de simple-datatables).
+         * @returns {Array<Object>} Conjunto filtrado de usuarios.
+         */
         function currentFilter() {
           const q = datatable?.input?.value?.toLowerCase()?.trim() || '';
           if (!q) return USUARIOS;
@@ -381,6 +416,12 @@ $camposTexto = [
           );
         }
 
+        btn?.addEventListener('click', (e) => { e.stopPropagation(); menu?.classList.toggle('hidden'); });
+        document.addEventListener('click', (e) => {
+          if (!menu) return; const inside = menu.contains(e.target) || btn.contains(e.target);
+          if (!inside) menu.classList.add('hidden');
+        });
+
         document.getElementById('export-excel')?.addEventListener('click', () => {
           menu?.classList.add('hidden'); exportExcel(buildExportRows(currentFilter()), 'usuarios.xlsx');
         });
@@ -389,7 +430,6 @@ $camposTexto = [
         });
       }
 
-      /* ====== Edición + Validaciones ====== */
       const usuarios      = @json($users);
       const form          = document.getElementById('formEditarUsuario');
       const btnActualizar = document.getElementById('btnActualizar');
@@ -400,6 +440,11 @@ $camposTexto = [
 
       let prevUserType = null;
 
+      /**
+       * Abre el formulario de edición, carga valores y prepara validaciones.
+       * @param {HTMLElement} btnEl Botón que dispara la edición (con data-user-id y data-update-url).
+       * @returns {void} No devuelve valor; actualiza UI y form.action.
+       */
       function editarUsuario(btnEl) {
         const id        = parseInt(btnEl.dataset.userId, 10);
         const updateUrl = btnEl.dataset.updateUrl;
@@ -412,7 +457,6 @@ $camposTexto = [
 
         form.action = updateUrl;
 
-        // Carga valores
         const allFields = [
           'first_name','last_name','email','birthdate','document_number','phone',
           'gender_id','document_type_id','user_type_id',
@@ -430,15 +474,18 @@ $camposTexto = [
           }
         });
 
-        // Nunca deshabilitar inputs (ocultar ≠ disabled)
         form.querySelectorAll('input,select,textarea').forEach(el => el.disabled = false);
 
-        // Tipo previo + evaluación inicial
         prevUserType = parseInt(form['user_type_id']?.value || '0', 10);
         toggleCamposEspeciales(true);
         validarFormulario();
       }
 
+      /**
+       * Cancela la edición y restablece la vista inicial.
+       * @param — sin parámetros.
+       * @returns {void} Limpia errores, oculta formulario y muestra tabla.
+       */
       function cancelarEdicion() {
         form.reset();
         form.querySelectorAll('input,select,textarea').forEach(el => setFieldError(el.id || el.name, ''));
@@ -449,7 +496,11 @@ $camposTexto = [
         document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
       }
 
-      // Solo limpia secundarios si realmente cambió de categoría
+      /**
+       * Alterna secciones dinámicas según tipo de usuario y limpia al salir.
+       * @param {boolean} [force=false] Fuerza evaluación aunque no cambie el tipo previo.
+       * @returns {void} Ajusta visibilidad y requeridos, y limpia campos si cambia.
+       */
       function toggleCamposEspeciales(force = false) {
         const tipo = parseInt(form['user_type_id']?.value || '0', 10);
         if (!force && prevUserType === tipo) return;
@@ -463,11 +514,9 @@ $camposTexto = [
         if (academic) academic.classList.toggle('hidden', !isEst);
         if (empresa)  empresa.classList.toggle('hidden', !isEmp);
 
-        // Required dinámico (NO disabled)
         ['academic_program_id','institution_id'].forEach(id => { const el = form[id]; if (el) el.required = isEst; });
         ['company_name','company_address'].forEach(id => { const el = form[id]; if (el) el.required = isEmp; });
 
-        // Limpia SOLO al salir de la categoría
         const wasEst = (prevUserType === 4);
         const wasEmp = (prevUserType === 2 || prevUserType === 3);
 
@@ -485,10 +534,14 @@ $camposTexto = [
         prevUserType = tipo;
       }
 
+      /**
+       * Valida campos base, email, secciones dinámicas y teléfono.
+       * @param — sin parámetros (lee desde el form global).
+       * @returns {boolean} True si el formulario está OK; false si hay errores.
+       */
       function validarFormulario() {
         let ok = true;
 
-        // Base
         camposRequeridosBase.forEach(id => {
           const el = form[id]; if (!el) return;
           const v = (el.value || '').trim();
@@ -497,23 +550,21 @@ $camposTexto = [
           setFieldError(id, valid ? '' : 'Campo obligatorio');
         });
 
-        // Email simple
         if (form.email) {
           const val = form.email.value.trim();
           const em  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
           if (!em) { ok = false; setFieldError('email', 'Correo no válido'); }
         }
 
-        // Secundarios
         const tipo = parseInt(form['user_type_id']?.value || '0', 10);
-        if (tipo === 4) { // Estudiante
+        if (tipo === 4) {
           ['academic_program_id','institution_id'].forEach(id => {
             const el = form[id]; if (!el) return;
             const v = (el.value || '').trim(); const valid = v.length > 0;
             if (!valid) ok = false; setFieldError(id, valid ? '' : 'Obligatorio para estudiantes');
           });
         }
-        if (tipo === 2 || tipo === 3) { // Empresa
+        if (tipo === 2 || tipo === 3) {
           ['company_name','company_address'].forEach(id => {
             const el = form[id]; if (!el) return;
             const v = (el.value || '').trim(); const valid = v.length > 0;
@@ -521,7 +572,6 @@ $camposTexto = [
           });
         }
 
-        // Teléfono (opcional con patrón)
         if (form.phone && form.phone.value) {
           const phOk = /^[0-9+\-\s()]{7,25}$/.test(form.phone.value.trim());
           if (!phOk) { ok = false; setFieldError('phone', 'Formato de teléfono inválido'); }
@@ -534,7 +584,11 @@ $camposTexto = [
         return ok;
       }
 
-      // Listeners
+      /**
+       * Cablea listeners de inputs y submit para validación y envío.
+       * @param — sin parámetros (IIFE autoejecutable).
+       * @returns {void} Agrega eventos, valida y hace POST via Axios.
+       */
       (function wireForm() {
         if (!form) return;
         form.querySelectorAll('input, select, textarea').forEach(el => {
