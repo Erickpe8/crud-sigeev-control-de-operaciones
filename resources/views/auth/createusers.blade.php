@@ -9,7 +9,7 @@
 
 @section('content')
     @php
-        $scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
+$scope = auth()->user()->hasRole('superadmin') ? 'superadmin' : 'admin';
     @endphp
 
     <form id="adminCreateForm" class="w-[720px] mx-auto bg-white rounded-lg shadow-lg p-6 relative">
@@ -27,17 +27,17 @@
             <div>
                 <label for="first_name" class="block mb-2 text-sm font-medium text-gray-900">Nombres</label>
                 <input type="text" id="first_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
             <div>
                 <label for="last_name" class="block mb-2 text-sm font-medium text-gray-900">Apellidos</label>
                 <input type="text" id="last_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
             <div class="md:col-span-2">
                 <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Correo Electrónico</label>
                 <input type="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
         </div>
 
@@ -46,7 +46,7 @@
             <div>
                 <label for="user_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de Usuario</label>
                 <select id="user_type_id" onchange="toggleCamposEspeciales()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($userTypes as $type)
                         <option value="{{ $type->id }}">{{ $type->type }}</option>
@@ -56,7 +56,7 @@
             <div>
                 <label for="document_type_id" class="block mb-2 text-sm font-medium text-gray-900">Tipo de Documento</label>
                 <select id="document_type_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($documentTypes as $doc)
                         <option value="{{ $doc->id }}">{{ $doc->name }}</option>
@@ -67,7 +67,7 @@
                 <label for="document_number" class="block mb-2 text-sm font-medium text-gray-900">Número de
                     Documento</label>
                 <input type="text" id="document_number" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
         </div>
 
@@ -76,7 +76,7 @@
             <div>
                 <label for="gender_id" class="block mb-2 text-sm font-medium text-gray-900">Sexo</label>
                 <select id="gender_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($genders as $gender)
                         <option value="{{ $gender->id }}">{{ $gender->name }}</option>
@@ -86,12 +86,12 @@
             <div>
                 <label for="phone" class="block mb-2 text-sm font-medium text-gray-900">Teléfono</label>
                 <input type="text" id="phone" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
             <div>
                 <label for="birthdate" class="block mb-2 text-sm font-medium text-gray-900">Fecha de Nacimiento</label>
                 <input type="date" id="birthdate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
         </div>
 
@@ -100,7 +100,7 @@
             <div class="mb-6">
                 <label for="role" class="block mb-2 text-sm font-medium text-gray-900">¿Deseas asignarle un rol?</label>
                 <select id="role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                       focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                    focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">user</option>
                     @foreach ($roles as $r)
                         @if($r !== 'user')
@@ -118,7 +118,7 @@
                 <label for="academic_program_id" class="block mb-2 text-sm font-medium text-gray-900">Programa
                     Académico</label>
                 <select id="academic_program_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($academicPrograms as $program)
                         <option value="{{ $program->id }}">{{ $program->name }}</option>
@@ -128,7 +128,7 @@
             <div>
                 <label for="institution_id" class="block mb-2 text-sm font-medium text-gray-900">Institución</label>
                 <select id="institution_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">Selecciona</option>
                     @foreach ($institutions as $inst)
                         <option value="{{ $inst->id }}">{{ $inst->name }}</option>
@@ -142,13 +142,13 @@
             <div>
                 <label for="company_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre de la Empresa</label>
                 <input type="text" id="company_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
             <div>
                 <label for="company_address" class="block mb-2 text-sm font-medium text-gray-900">Dirección de la
                     Empresa</label>
                 <input type="text" id="company_address" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             </div>
         </div>
 
@@ -157,7 +157,7 @@
             <div class="relative">
                 <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Contraseña</label>
                 <input type="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10">
                 <button type="button" onclick="togglePassword('password', this)"
                     class="absolute right-3 top-9 text-gray-500">👁</button>
             </div>
@@ -165,7 +165,7 @@
                 <label for="password_confirmation" class="block mb-2 text-sm font-medium text-gray-900">Confirmar
                     Contraseña</label>
                 <input type="password" id="password_confirmation" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10">
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10">
                 <button type="button" onclick="togglePassword('password_confirmation', this)"
                     class="absolute right-3 top-9 text-gray-500">👁</button>
             </div>
@@ -205,18 +205,34 @@
         axios.defaults.headers.common['X-CSRF-TOKEN'] =
             document.querySelector('meta[name="csrf-token"]').content;
 
+        /**
+         * Alterna visibilidad de un campo de contraseña.
+         * @param {string} id - ID del input password
+         * @param {HTMLElement} btn - Botón que cambia el icono
+         * @returns {void}
+         */
         function togglePassword(id, btn) {
             const input = document.getElementById(id);
             input.type = input.type === 'password' ? 'text' : 'password';
             btn.textContent = input.type === 'password' ? '👁' : '🙈';
         }
 
+        /**
+         * Muestra u oculta secciones dinámicas según tipo de usuario.
+         * @returns {void} No devuelve nada, solo modifica el DOM.
+         */
         function toggleCamposEspeciales() {
             const tipo = parseInt(document.getElementById('user_type_id').value);
-            document.getElementById('academic_section').classList.toggle('hidden', !(tipo === 4));
-            document.getElementById('empresa_section').classList.toggle('hidden', !(tipo === 2 || tipo === 3));
+            document.getElementById('academic_section')
+                .classList.toggle('hidden', !(tipo === 4));
+            document.getElementById('empresa_section')
+                .classList.toggle('hidden', !(tipo === 2 || tipo === 3));
         }
 
+        /**
+         * Valida campos del formulario y habilita/deshabilita el botón Crear.
+         * @returns {void} No devuelve nada, solo cambia el estado del botón.
+         */
         function validarFormulario() {
             const campos = [
                 'first_name', 'last_name', 'email', 'user_type_id',
@@ -233,6 +249,10 @@
             btn.classList.toggle('cursor-not-allowed', !esValido);
         }
 
+        /**
+         * Envía el formulario al servidor para crear un nuevo usuario.
+         * @returns {Promise<void>} Promesa que gestiona éxito o errores de validación.
+         */
         async function crearUsuario() {
             document.getElementById('errores-validacion').innerHTML = '';
 
@@ -280,23 +300,25 @@
                 for (const campo in errores) {
                     errores[campo].forEach(msg => { lista += `<li>${msg}</li>`; });
                 }
-
                 const html = `
-                        <div class="flex p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 shadow-lg" role="alert">
-                            <svg class="shrink-0 inline w-4 h-4 me-3 mt-[2px]" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
-                                viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/></svg>
-                            <div>
-                                <span class="font-medium">Por favor corrige los siguientes errores:</span>
-                                <ol class="mt-1.5 list-decimal list-inside">${lista || '<li>Error inesperado.</li>'}</ol>
-                            </div>
-                        </div>`;
+                    <div class="flex p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 shadow-lg" role="alert">
+                        <svg class="shrink-0 inline w-4 h-4 me-3 mt-[2px]" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                            viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/></svg>
+                        <div>
+                            <span class="font-medium">Por favor corrige los siguientes errores:</span>
+                            <ol class="mt-1.5 list-decimal list-inside">${lista || '<li>Error inesperado.</li>'}</ol>
+                        </div>
+                    </div>`;
                 document.getElementById('errores-validacion').innerHTML = html;
                 setTimeout(() => { document.getElementById('errores-validacion').innerHTML = ''; }, 5000);
             }
-
             validarFormulario();
         }
 
+        /**
+         * Inicializa la vista: setea secciones dinámicas, listeners y validación inicial.
+         * @returns {void}
+         */
         document.addEventListener('DOMContentLoaded', () => {
             toggleCamposEspeciales();
             validarFormulario();
