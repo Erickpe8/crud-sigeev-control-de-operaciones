@@ -27,7 +27,7 @@
             <div class="flex justify-center mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-[#ff0000]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0 0l3-3m-3 3l-3-3"/>
+                        d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0 0l3-3m-3 3l-3-3"/>
                 </svg>
             </div>
 
@@ -77,14 +77,14 @@
                     <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                     <div class="relative mt-1">
                         <input id="email" name="email" type="email" required autocomplete="email"
-                               value="{{ old('email') }}"
-                               class="block w-full rounded-lg border border-gray-300 px-10 py-2 shadow-sm focus:ring-2 focus:ring-[#ff0000] focus:border-[#ff0000] outline-none"
-                               placeholder="usuario@correo.com">
+                            value="{{ old('email') }}"
+                            class="block w-full rounded-lg border border-gray-300 px-10 py-2 shadow-sm focus:ring-2 focus:ring-[#ff0000] focus:border-[#ff0000] outline-none"
+                            placeholder="usuario@correo.com">
                         <div class="absolute left-3 top-2.5 text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                 viewBox="0 0 24 24" stroke="currentColor">
+                                viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M16 12H8m0 0l4-4m-4 4l4 4"/>
+                                    d="M16 12H8m0 0l4-4m-4 4l4 4"/>
                             </svg>
                         </div>
                     </div>
@@ -95,17 +95,17 @@
                     <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
                     <div class="relative mt-1">
                         <input id="password" name="password" type="password" required autocomplete="current-password"
-                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-[#ff0000] focus:border-[#ff0000] outline-none pr-10"
-                               placeholder="••••••••">
+                            class="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-[#ff0000] focus:border-[#ff0000] outline-none pr-10"
+                            placeholder="••••••••">
                         <button type="button" onclick="togglePassword()"
                                 class="absolute right-3 top-2.5 text-gray-600 hover:text-gray-900 transition-colors duration-200 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500"
                                 aria-label="Mostrar u ocultar contraseña">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                 viewBox="0 0 24 24" stroke="currentColor">
+                                viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </button>
                     </div>
@@ -125,9 +125,9 @@
                     <button type="submit"
                         class="w-full bg-[#ff0000] hover:bg-red-600 text-white py-2 rounded-md font-medium transition duration-200 flex items-center justify-center">
                         <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                             xmlns="http://www.w3.org/2000/svg">
+                            xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M5 13l4 4L19 7"/>
+                                d="M5 13l4 4L19 7"/>
                         </svg>
                         Ingresar
                     </button>
