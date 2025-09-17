@@ -40,9 +40,9 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach ($users as $usuario)
                             @php
-        $rolesStr = $usuario->roles->pluck('name')->implode(', ');
-        $isSuper = $usuario->hasRole('superadmin');
-        $isSelf = auth()->id() === $usuario->id;
+                                $rolesStr = $usuario->roles->pluck('name')->implode(', ');
+                                $isSuper = $usuario->hasRole('superadmin');
+                                $isSelf = auth()->id() === $usuario->id;
                             @endphp
                             <tr class="hover:bg-gray-50 transition fila-usuario">
                                 <td class="px-4 py-2">{{ $usuario->id }}</td>
@@ -65,7 +65,7 @@
 
                                     @unless($isSuper || $isSelf)
                                         <form method="POST" action="{{ route('superadmin.usuarios.destroy', $usuario) }}"
-                                              onsubmit="return confirm('¿Eliminar este usuario?')" class="inline-block">
+                                                onsubmit="return confirm('¿Eliminar este usuario?')" class="inline-block">
                                             @csrf
                                             @method('DELETE')
                                             <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
@@ -80,9 +80,6 @@
                 </table>
             </div>
 
-
-
-
             {{-- Formulario de edición (oculto hasta presionar "Editar") --}}
             <section id="formularioEdicion" class="hidden mt-10">
                 <h2 class="text-xl font-semibold mb-6 text-gray-700">Editar Usuario</h2>
@@ -93,14 +90,14 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         @php
-    $camposTexto = [
-        'first_name' => 'Primer Nombre',
-        'last_name' => 'Apellido',
-        'email' => 'Correo Electrónico',
-        'birthdate' => 'Fecha de Nacimiento',
-        'document_number' => 'Número de Documento',
-        'phone' => 'Teléfono', // incluido
-    ];
+                            $camposTexto = [
+                                'first_name' => 'Primer Nombre',
+                                'last_name' => 'Apellido',
+                                'email' => 'Correo Electrónico',
+                                'birthdate' => 'Fecha de Nacimiento',
+                                'document_number' => 'Número de Documento',
+                                'phone' => 'Teléfono', // incluido
+                            ];
                         @endphp
 
                         @foreach ($camposTexto as $id => $label)
@@ -114,10 +111,10 @@
                         @endforeach
 
                         @foreach ([
-        'gender_id' => $genders ?? collect(),
-        'document_type_id' => $documentTypes ?? collect(),
-        'user_type_id' => $userTypes ?? collect(),
-    ] as $id => $collection)
+                                    'gender_id' => $genders ?? collect(),
+                                    'document_type_id' => $documentTypes ?? collect(),
+                                    'user_type_id' => $userTypes ?? collect(),
+                                ] as $id => $collection)
                             <div>
                                 <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
                                     {{ ucwords(str_replace('_', ' ', $id)) }}
@@ -173,12 +170,12 @@
                             <div class="mb-4">
                                 <label for="company_name" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
                                 <input type="text" id="company_name" name="company_name"
-                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                             </div>
                             <div>
                                 <label for="company_address" class="block text-sm font-medium text-gray-700">Dirección de la Empresa</label>
                                 <input type="text" id="company_address" name="company_address"
-                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                             </div>
                         </div>
                     </div>
@@ -205,354 +202,397 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.2/dist/jspdf.plugin.autotable.min.js"></script>
 
-<script>
-/* ====== CSRF para Axios ====== */
-(function setupAxiosCsrf() {
-  const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-  if (token) axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
-})();
+    <script>
+        /**
+         * Inyecta el token CSRF en Axios para peticiones seguras.
+         * @param — IIFE autoejecutable sin parámetros.
+         * @returns {void} Configura axios.defaults.headers.
+         */
+        (function setupAxiosCsrf() {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (token) axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+        })();
 
-/* ====== Mapeos id->nombre desde Blade (fallbacks seguros) ====== */
-const GENDERS_MAP   = @json(isset($genders) ? $genders->pluck('name', 'id') : collect());
-const DOC_TYPES_MAP = @json(
-  isset($documentTypes)
-    ? $documentTypes->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')])
-    : collect()
-);
+        const GENDERS_MAP   = @json(isset($genders) ? $genders->pluck('name', 'id') : collect());
+        const DOC_TYPES_MAP = @json(
+        isset($documentTypes)
+            ? $documentTypes->mapWithKeys(fn($d) => [$d->id => ($d->name ?? $d->type ?? '')])
+            : collect()
+        );
+        const USUARIOS = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
 
-/* ====== Dataset (igual al que usas para la edición) ====== */
-const USUARIOS = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
+        /**
+         * Convierte una fecha ISO a formato dd/mm/yyyy.
+         * @param {string} iso Cadena de fecha ISO o similar.
+         * @returns {string} Fecha en dd/mm/yyyy; si falla, retorna la entrada.
+         */
+        function formatDateISOtoDMY(iso) {
+        if (!iso) return '';
+        try {
+            const parts = String(iso).split('T')[0].split('-');
+            if (parts.length === 3) {
+            const [y,m,d] = parts;
+            return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+            }
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return iso;
+            const dd = String(d.getUTCDate()).padStart(2,'0');
+            const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+            const yyyy = d.getUTCFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+        } catch { return iso; }
+        }
 
-/* ====== Helpers formato/transformación ====== */
-function formatDateISOtoDMY(iso) {
-  if (!iso) return '';
-  try {
-    const parts = String(iso).split('T')[0].split('-'); // YYYY-MM-DD
-    if (parts.length === 3) {
-      const [y,m,d] = parts;
-      return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
-    }
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    const dd = String(d.getUTCDate()).padStart(2,'0');
-    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
-    const yyyy = d.getUTCFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  } catch { return iso; }
-}
+        /**
+         * Mapea el dataset de usuarios a filas legibles para exportar.
+         * @param {Array<Object>} source Lista de usuarios crudos.
+         * @returns {Array<Object>} Filas con claves amigables para Excel/PDF.
+         */
+        function buildExportRows(source) {
+        if (!Array.isArray(source)) return [];
+        return source.map(u => {
+            const genero  = (u.gender_id != null)        ? (GENDERS_MAP[String(u.gender_id)] ?? GENDERS_MAP[u.gender_id] ?? '') : '';
+            const docType = (u.document_type_id != null) ? (DOC_TYPES_MAP[String(u.document_type_id)] ?? DOC_TYPES_MAP[u.document_type_id] ?? '') : '';
+            return {
+            'Nombre': (u.first_name ?? ''),
+            'Apellido': (u.last_name ?? ''),
+            'Correo': (u.email ?? ''),
+            'Fecha de nacimiento': formatDateISOtoDMY(u.birthdate ?? ''),
+            'Género': genero,
+            'Tipo de documento': docType,
+            'N.º documento': (u.document_number ?? ''),
+            'Teléfono': (u.phone ?? ''),
+            };
+        });
+        }
 
-function buildExportRows(source) {
-  if (!Array.isArray(source)) return [];
-  return source.map(u => {
-    const genero  = (u.gender_id != null)        ? (GENDERS_MAP[String(u.gender_id)] ?? GENDERS_MAP[u.gender_id] ?? '') : '';
-    const docType = (u.document_type_id != null) ? (DOC_TYPES_MAP[String(u.document_type_id)] ?? DOC_TYPES_MAP[u.document_type_id] ?? '') : '';
-    return {
-      'Nombre': (u.first_name ?? ''),
-      'Apellido': (u.last_name ?? ''),
-      'Correo': (u.email ?? ''),
-      'Fecha de nacimiento': formatDateISOtoDMY(u.birthdate ?? ''),
-      'Género': genero,
-      'Tipo de documento': docType,
-      'N.º documento': (u.document_number ?? ''),
-      'Teléfono': (u.phone ?? ''),
-    };
-  });
-}
+        /**
+         * Genera y descarga un Excel usando SheetJS.
+         * @param {Array<Object>} rows Filas a exportar; @param {string} [fileName='usuarios.xlsx'] Nombre de archivo.
+         * @returns {void} Crea workbook y dispara la descarga.
+         */
+        function exportExcel(rows, fileName = 'usuarios.xlsx') {
+        if (!rows?.length) return alert('No hay datos para exportar.');
+        const ws = XLSX.utils.json_to_sheet(rows, { header: Object.keys(rows[0]) });
+        const colWidths = Object.keys(rows[0]).map(k => ({ wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2 }));
+        ws['!cols'] = colWidths;
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
+        XLSX.writeFile(wb, fileName);
+        }
 
-/* ====== Export a Excel (SheetJS) ====== */
-function exportExcel(rows, fileName = 'usuarios.xlsx') {
-  if (!rows?.length) return alert('No hay datos para exportar.');
-  const ws = XLSX.utils.json_to_sheet(rows, { header: Object.keys(rows[0]) });
-  const colWidths = Object.keys(rows[0]).map(k => ({
-    wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2
-  }));
-  ws['!cols'] = colWidths;
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
-  XLSX.writeFile(wb, fileName);
-}
+        /**
+         * Genera y descarga un PDF usando jsPDF + autoTable.
+         * @param {Array<Object>} rows Filas a exportar; @param {string} [fileName='usuarios.pdf'] Nombre de archivo.
+         * @returns {void} Crea el PDF y dispara la descarga.
+         */
+        function exportPDF(rows, fileName = 'usuarios.pdf') {
+        if (!rows?.length) return alert('No hay datos para exportar.');
+        const { jsPDF } = window.jspdf || {};
+        const hasJsPDF = typeof jsPDF === 'function';
+        const hasAutoTable = !!(jsPDF && jsPDF.API && typeof jsPDF.API.autoTable === 'function');
+        if (!hasJsPDF || !hasAutoTable) {
+            console.error('jsPDF o autoTable no disponibles', { hasJsPDF, hasAutoTable, jsPDF });
+            alert('Librerías de PDF no disponibles.');
+            return;
+        }
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'A4' });
+        const headers = [Object.keys(rows[0])];
+        const body = rows.map(r => headers[0].map(h => r[h] ?? ''));
+        doc.setFontSize(12);
+        doc.text('Usuarios', 40, 40);
+        doc.autoTable({
+            startY: 60,
+            head: headers,
+            body,
+            styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+            headStyles: { fillColor: [41, 98, 255], textColor: 255 },
+            margin: { left: 40, right: 40 },
+            tableWidth: 'auto',
+        });
+        doc.save(fileName);
+        }
 
-/* ====== Export a PDF (jsPDF + AutoTable) ====== */
-function exportPDF(rows, fileName = 'usuarios.pdf') {
-  if (!rows?.length) return alert('No hay datos para exportar.');
-  const { jsPDF } = window.jspdf || {};
-  const hasJsPDF = typeof jsPDF === 'function';
-  const hasAutoTable = !!(jsPDF && jsPDF.API && typeof jsPDF.API.autoTable === 'function');
-  if (!hasJsPDF || !hasAutoTable) {
-    console.error('jsPDF o autoTable no disponibles', { hasJsPDF, hasAutoTable, jsPDF });
-    alert('Librerías de PDF no disponibles.');
-    return;
-  }
-
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'A4' });
-  const headers = [Object.keys(rows[0])];
-  const body = rows.map(r => headers[0].map(h => r[h] ?? ''));
-
-  doc.setFontSize(12);
-  doc.text('Usuarios', 40, 40);
-  doc.autoTable({
-    startY: 60,
-    head: headers,
-    body,
-    styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-    headStyles: { fillColor: [41, 98, 255], textColor: 255 },
-    margin: { left: 40, right: 40 },
-    tableWidth: 'auto',
-  });
-
-  doc.save(fileName);
-}
-
-/* ====== DataTable (lista) ====== */
-if (document.getElementById("export-table") && typeof simpleDatatables?.DataTable !== 'undefined') {
-  const table = new simpleDatatables.DataTable("#export-table", {
-    // ⬇️ Plantilla con select de "por página" en la parte superior
-    template: (options, dom) =>
-      "<div class='" + options.classes.top + "'>" +
-        "<div class='flex flex-row items-center justify-between gap-4'>" +
-          (options.paging && options.perPageSelect
-            ? "<div class='flex items-center gap-2'>" +
-              "<label class='flex items-center gap-2'>" +
-              "<select class='" + options.classes.selector + " border-gray-300 rounded-md'></select>" +
-              "<span class='text-sm text-gray-600'>por página</span>" +
-              "</label></div>"
-            : ""
-          ) +
-          "<div class='relative'>" +
-            "<button id='exportDropdownButton' type='button' class='flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none'>Exportar" +
-              "<svg class='ml-1 h-4 w-4' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><path stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m19 9-7 7-7-7'/></svg>" +
-            "</button>" +
-            "<div id='exportDropdown' class='absolute right-0 mt-2 z-10 hidden w-48 rounded-lg bg-white shadow-sm ring-1 ring-black/5'>" +
-              "<ul class='p-2 text-sm text-gray-700' aria-labelledby='exportDropdownButton'>" +
-                "<li><button id='export-excel' class='w-full px-3 py-2 text-left hover:bg-gray-100'>Exportar a Excel</button></li>" +
-                "<li><button id='export-pdf'   class='w-full px-3 py-2 text-left hover:bg-gray-100'>Exportar a PDF</button></li>" +
-              "</ul>" +
+        /**
+         * Inicializa la tabla de usuarios (si existe) y agrega UI de exportación.
+         * @param — Se ejecuta al detectar #export-table y DataTable disponible.
+         * @returns {void} Configura paginación, búsqueda y menús de exportación.
+         */
+        if (document.getElementById("export-table") && typeof simpleDatatables?.DataTable !== 'undefined') {
+        const table = new simpleDatatables.DataTable("#export-table", {
+            template: (options, dom) =>
+            "<div class='" + options.classes.top + "'>" +
+                "<div class='flex flex-row items-center justify-between gap-4'>" +
+                (options.paging && options.perPageSelect
+                    ? "<div class='flex items-center gap-2'>" +
+                    "<label class='flex items-center gap-2'>" +
+                    "<select class='" + options.classes.selector + " border-gray-300 rounded-md'></select>" +
+                    "<span class='text-sm text-gray-600'>por página</span>" +
+                    "</label></div>"
+                    : ""
+                ) +
+                "<div class='relative'>" +
+                    "<button id='exportDropdownButton' type='button' class='flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none'>Exportar" +
+                    "<svg class='ml-1 h-4 w-4' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><path stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m19 9-7 7-7-7'/></svg>" +
+                    "</button>" +
+                    "<div id='exportDropdown' class='absolute right-0 mt-2 z-10 hidden w-48 rounded-lg bg-white shadow-sm ring-1 ring-black/5'>" +
+                    "<ul class='p-2 text-sm text-gray-700' aria-labelledby='exportDropdownButton'>" +
+                        "<li><button id='export-excel' class='w-full px-3 py-2 text-left hover:bg-gray-100'>Exportar a Excel</button></li>" +
+                        "<li><button id='export-pdf'   class='w-full px-3 py-2 text-left hover:bg-gray-100'>Exportar a PDF</button></li>" +
+                    "</ul>" +
+                    "</div>" +
+                "</div>" +
+                (options.searchable
+                    ? "<div class='" + options.classes.search + " w-64'>" +
+                    "<input class='" + options.classes.input + " w-full rounded-md border-gray-300' placeholder='Buscar…' type='search' title='Buscar en la tabla' " + (dom.id ? " aria-controls='" + dom.id + "'" : "") + ">" +
+                    "</div>"
+                    : ""
+                ) +
+                "</div>" +
             "</div>" +
-          "</div>" +
-          (options.searchable
-            ? "<div class='" + options.classes.search + " w-64'>" +
-              "<input class='" + options.classes.input + " w-full rounded-md border-gray-300' placeholder='Buscar…' type='search' title='Buscar en la tabla' " + (dom.id ? " aria-controls='" + dom.id + "'" : "") + ">" +
-              "</div>"
-            : ""
-          ) +
-        "</div>" +
-      "</div>" +
-      "<div class='" + options.classes.container + "'></div>" +
-      "<div class='" + options.classes.bottom + "'>" +
-        (options.paging ? "<div class='" + options.classes.info + "'></div>" : "") +
-        "<nav class='" + options.classes.pagination + "'></nav>" +
-      "</div>",
+            "<div class='" + options.classes.container + "'></div>" +
+            "<div class='" + options.classes.bottom + "'>" +
+                (options.paging ? "<div class='" + options.classes.info + "'></div>" : "") +
+                "<nav class='" + options.classes.pagination + "'></nav>" +
+            "</div>",
+            columns: [{ select: 0, hidden: true, sort: 'asc' }],
+            perPage: 100,
+            perPageSelect: [50, 100, 200],
+            searchable: true,
+            labels: {
+            placeholder: 'Buscar…',
+            perPage: 'por página',
+            noRows: 'No se encontraron registros',
+            info: 'Mostrando {start}–{end} de {rows}',
+            searchTitle: 'Buscar en la tabla'
+            }
+        });
 
-    /* ⬇️ Orden inicial por ID ascendente */
-    columns: [{ select: 0, hidden: true, sort: 'asc' }],
+        /**
+         * Repara el selector de registros por página y fuerza 100 por defecto.
+         * @param — Callback del evento interno datatable.init.
+         * @returns {void} Rellena opciones y dispara change inicial.
+         */
+        table.on('datatable.init', () => {
+            const selector = table.wrapper?.querySelector('select.dataTable-selector');
+            if (!selector) return;
+            const desired = ['50','100','200'];
+            const current = Array.from(selector.options).map(o => o.value);
+            if (desired.join(',') !== current.join(',')) {
+            selector.innerHTML = '';
+            desired.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                selector.appendChild(opt);
+            });
+            }
+            selector.value = '100';
+            selector.dispatchEvent(new Event('change'));
+        });
 
-    /* ⬇️ Paginación del plugin: default 100, opciones 50/100/200 */
-    perPage: 100,
-    perPageSelect: [50, 100, 200],
+        const btn = document.getElementById('exportDropdownButton');
+        const menu = document.getElementById('exportDropdown');
 
-    searchable: true,
-    labels: {
-      placeholder: 'Buscar…',
-      perPage: 'por página',
-      noRows: 'No se encontraron registros',
-      info: 'Mostrando {start}–{end} de {rows}',
-      searchTitle: 'Buscar en la tabla'
-    }
-  });
+        /**
+         * Obtiene el dataset filtrado según el término de búsqueda actual.
+         * @param — Sin parámetros; lee el input de búsqueda del plugin.
+         * @returns {Array<Object>} Subconjunto de usuarios que coinciden.
+         */
+        function currentFilter() {
+            const q = document.querySelector('.dataTable-input')?.value?.toLowerCase()?.trim() || '';
+            if (!q) return USUARIOS;
+            return USUARIOS.filter(u =>
+            [u.first_name, u.last_name, u.email, u.document_number, u.phone]
+                .filter(Boolean)
+                .some(v => String(v).toLowerCase().includes(q))
+            );
+        }
 
-  /* Fallback por si tu versión no soporta array en perPageSelect */
-  table.on('datatable.init', () => {
-    const selector = table.wrapper?.querySelector('select.dataTable-selector');
-    if (!selector) return;
-    // Si el plugin no llenó correctamente, lo re-llenamos
-    const desired = ['50','100','200'];
-    const current = Array.from(selector.options).map(o => o.value);
-    const needFix = desired.join(',') !== current.join(',');
-    if (needFix) {
-      selector.innerHTML = '';
-      desired.forEach(v => {
-        const opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = v;
-        selector.appendChild(opt);
-      });
-    }
-    selector.value = '100';
-    selector.dispatchEvent(new Event('change'));
-  });
+        btn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu?.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!menu) return;
+            const inside = menu.contains(e.target) || btn.contains(e.target);
+            if (!inside) menu.classList.add('hidden');
+        });
+        document.getElementById('export-excel')?.addEventListener('click', () => {
+            menu?.classList.add('hidden');
+            const rows = buildExportRows(currentFilter());
+            exportExcel(rows, 'usuarios.xlsx');
+        });
+        document.getElementById('export-pdf')?.addEventListener('click', () => {
+            menu?.classList.add('hidden');
+            const rows = buildExportRows(currentFilter());
+            exportPDF(rows, 'usuarios.pdf');
+        });
+        }
 
-  /* ====== Exportaciones (filtra por búsqueda actual del DataTable) ====== */
-  const btn = document.getElementById('exportDropdownButton');
-  const menu = document.getElementById('exportDropdown');
-  btn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    menu?.classList.toggle('hidden');
-  });
-  document.addEventListener('click', (e) => {
-    if (!menu) return;
-    const inside = menu.contains(e.target) || btn.contains(e.target);
-    if (!inside) menu.classList.add('hidden');
-  });
+        const usuarios = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
+        const form = document.getElementById('formEditarUsuario');
+        const btnActualizar = document.getElementById('btnActualizar');
+        const camposRequeridos = ['first_name','last_name','email'];
+        const camposEstudiante = ['academic_program_id','institution_id'];
+        const camposEmpresa = ['company_name','company_address'];
 
-  function currentFilter() {
-    const q = document.querySelector('.dataTable-input')?.value?.toLowerCase()?.trim() || '';
-    if (!q) return USUARIOS;
-    return USUARIOS.filter(u =>
-      [u.first_name, u.last_name, u.email, u.document_number, u.phone]
-        .filter(Boolean)
-        .some(v => String(v).toLowerCase().includes(q))
-    );
-  }
+        /**
+         * Muestra un toast compacto en la esquina superior derecha.
+         * @param {string} message Mensaje a mostrar; @param {'success'|'warning'|'error'} [type='success'] Tipo visual.
+         * @returns {void} Inserta y remueve el toast automáticamente.
+         */
+        function showToast(message, type = 'success') {
+        const wrap = document.createElement('div');
+        wrap.className = `pointer-events-auto rounded-md px-4 py-3 shadow-lg text-sm ${type === 'success' ? 'bg-green-600 text-white' : (type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-red-600 text-white')}`;
+        wrap.style.whiteSpace = 'pre-line';
+        wrap.textContent = message;
+        (document.getElementById('toastContainer') || document.body).appendChild(wrap);
+        setTimeout(() => wrap.remove(), 4500);
+        }
 
-  document.getElementById('export-excel')?.addEventListener('click', () => {
-    menu?.classList.add('hidden');
-    const rows = buildExportRows(currentFilter());
-    exportExcel(rows, 'usuarios.xlsx');
-  });
+        /**
+         * Carga el usuario en el formulario y muestra la sección de edición.
+         * @param {HTMLElement} btn Botón con data-user-id y data-update-url.
+         * @returns {void} Pone valores, setea acción y dispara validación inicial.
+         */
+        function editarUsuario(btn) {
+        const id = parseInt(btn.dataset.userId, 10);
+        const updateUrl = btn.dataset.updateUrl;
+        const user = Array.isArray(usuarios) ? usuarios.find(u => u.id === id) : null;
+        if (!user) return showToast('⚠️ Usuario no encontrado', 'error');
 
-  document.getElementById('export-pdf')?.addEventListener('click', () => {
-    menu?.classList.add('hidden');
-    const rows = buildExportRows(currentFilter());
-    exportPDF(rows, 'usuarios.pdf');
-  });
-}
+        document.getElementById('tablaUsuarios').classList.add('hidden');
+        document.getElementById('formularioEdicion').classList.remove('hidden');
+        document.getElementById('mensajeBienvenida')?.classList.add('hidden');
 
-/* ====== Lógica de edición (SPA dentro del layout) ====== */
-const usuarios = @json(($users instanceof \Illuminate\Pagination\AbstractPaginator) ? ($users->toArray()['data'] ?? []) : $users);
-const form = document.getElementById('formEditarUsuario');
-const btnActualizar = document.getElementById('btnActualizar');
+        form.action = updateUrl;
 
-const camposRequeridos = ['first_name','last_name','email'];
-const camposEstudiante = ['academic_program_id','institution_id'];
-const camposEmpresa = ['company_name','company_address'];
+        const allFields = [
+            'first_name','last_name','email','birthdate','document_number','phone',
+            'gender_id','document_type_id','user_type_id',
+            'academic_program_id','institution_id',
+            'company_name','company_address'
+        ];
+        allFields.forEach(field => {
+            if (form[field] !== undefined) {
+            let value = user[field] ?? '';
+            if (field === 'birthdate' && value) {
+                try { value = new Date(value).toISOString().split('T')[0]; } catch (e) {}
+            }
+            form[field].value = (value ?? '').toString();
+            }
+        });
 
-function showToast(message, type = 'success') {
-  const wrap = document.createElement('div');
-  wrap.className = `pointer-events-auto rounded-md px-4 py-3 shadow-lg text-sm ${type === 'success' ? 'bg-green-600 text-white' : (type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-red-600 text-white')}`;
-  wrap.style.whiteSpace = 'pre-line';
-  wrap.textContent = message;
-  (document.getElementById('toastContainer') || document.body).appendChild(wrap);
-  setTimeout(() => wrap.remove(), 4500);
-}
+        const currentRole = (user.roles && user.roles.length) ? (user.roles[0].name || user.roles[0]) : 'user';
+        if (form['role']) form['role'].value = currentRole;
 
-function editarUsuario(btn) {
-  const id = parseInt(btn.dataset.userId, 10);
-  const updateUrl = btn.dataset.updateUrl;
+        toggleCamposEspeciales();
+        validarFormulario();
+        }
 
-  const user = Array.isArray(usuarios) ? usuarios.find(u => u.id === id) : null;
-  if (!user) return showToast('⚠️ Usuario no encontrado', 'error');
+        /**
+         * Cancela la edición y restaura la vista de tabla.
+         * @param — Sin parámetros.
+         * @returns {void} Limpia formulario y alterna visibilidad de secciones.
+         */
+        function cancelarEdicion() {
+        form.reset();
+        toggleCamposEspeciales();
+        validarFormulario();
+        document.getElementById('formularioEdicion').classList.add('hidden');
+        document.getElementById('tablaUsuarios').classList.remove('hidden');
+        document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
+        }
 
-  document.getElementById('tablaUsuarios').classList.add('hidden');
-  document.getElementById('formularioEdicion').classList.remove('hidden');
-  document.getElementById('mensajeBienvenida')?.classList.add('hidden');
+        /**
+         * Muestra/oculta secciones según el tipo de usuario y limpia si no aplica.
+         * @param — Sin parámetros (lee user_type_id del form).
+         * @returns {void} Alterna #academic_section y #empresa_section y resetea.
+         */
+        function toggleCamposEspeciales() {
+        const tipo = parseInt(form['user_type_id']?.value || '0');
+        const academic = document.getElementById('academic_section');
+        const empresa  = document.getElementById('empresa_section');
 
-  form.action = updateUrl;
+        if (academic) academic.classList.toggle('hidden', tipo !== 4);
+        if (empresa)  empresa.classList.toggle('hidden', !(tipo === 2 || tipo === 3));
 
-  const allFields = [
-    'first_name','last_name','email','birthdate','document_number','phone',
-    'gender_id','document_type_id','user_type_id',
-    'academic_program_id','institution_id',
-    'company_name','company_address'
-  ];
-  allFields.forEach(field => {
-    if (form[field] !== undefined) {
-      let value = user[field] ?? '';
-      if (field === 'birthdate' && value) {
-        try { value = new Date(value).toISOString().split('T')[0]; } catch (e) {}
-      }
-      form[field].value = (value ?? '').toString();
-    }
-  });
+        if (tipo !== 4) {
+            if (form['academic_program_id']) form['academic_program_id'].value = '';
+            if (form['institution_id']) form['institution_id'].value = '';
+        }
+        if (!(tipo === 2 || tipo === 3)) {
+            if (form['company_name']) form['company_name'].value = '';
+            if (form['company_address']) form['company_address'].value = '';
+        }
+        }
 
-  const currentRole = (user.roles && user.roles.length) ? (user.roles[0].name || user.roles[0]) : 'user';
-  if (form['role']) form['role'].value = currentRole;
+        /**
+         * Valida campos base y dinámicos para habilitar el botón de envío.
+         * @param — Sin parámetros (usa el form y constantes globales).
+         * @returns {void} Activa/desactiva el botón según validez.
+         */
+        function validarFormulario() {
+        let esValido = true;
 
-  toggleCamposEspeciales();
-  validarFormulario();
-}
+        camposRequeridos.forEach(id => {
+            const el = form[id];
+            if (!el || el.value.trim() === '') esValido = false;
+        });
 
-function cancelarEdicion() {
-  form.reset();
-  toggleCamposEspeciales();
-  validarFormulario();
-  document.getElementById('formularioEdicion').classList.add('hidden');
-  document.getElementById('tablaUsuarios').classList.remove('hidden');
-  document.getElementById('mensajeBienvenida')?.classList.remove('hidden');
-}
+        const tipo = parseInt(form['user_type_id']?.value || '0');
+        if (tipo === 4) {
+            camposEstudiante.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
+        }
+        if (tipo === 2 || tipo === 3) {
+            camposEmpresa.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
+        }
 
-function toggleCamposEspeciales() {
-  const tipo = parseInt(form['user_type_id']?.value || '0');
-  const academic = document.getElementById('academic_section');
-  const empresa  = document.getElementById('empresa_section');
+        btnActualizar.disabled = !esValido;
+        btnActualizar.classList.toggle('opacity-50', !esValido);
+        btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
+        }
 
-  if (academic) academic.classList.toggle('hidden', tipo !== 4);
-  if (empresa)  empresa.classList.toggle('hidden', !(tipo === 2 || tipo === 3));
+        /**
+         * Registra listeners de inputs y gestiona el envío del formulario.
+         * @param — Se ejecuta si existe el formulario en el DOM.
+         * @returns {void} Adjunta eventos de cambio y submit con Axios.
+         */
+        if (form) {
+        form.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', validarFormulario);
+            el.addEventListener('change', () => { toggleCamposEspeciales(); validarFormulario(); });
+        });
 
-  if (tipo !== 4) {
-    if (form['academic_program_id']) form['academic_program_id'].value = '';
-    if (form['institution_id']) form['institution_id'].value = '';
-  }
-  if (!(tipo === 2 || tipo === 3)) {
-    if (form['company_name']) form['company_name'].value = '';
-    if (form['company_address']) form['company_address'].value = '';
-  }
-}
+        /**
+         * Envía el formulario por Axios y muestra toasts según respuesta.
+         * @param {SubmitEvent} e Evento de envío del formulario.
+         * @returns {Promise<void>} Maneja success/422/403/otros errores.
+         */
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-function validarFormulario() {
-  let esValido = true;
+            const formData = new FormData(form);
+            formData.set('_method', 'PUT');
+            formData.set('accepted_terms', 1);
 
-  camposRequeridos.forEach(id => {
-    const el = form[id];
-    if (!el || el.value.trim() === '') esValido = false;
-  });
-
-  const tipo = parseInt(form['user_type_id']?.value || '0');
-  if (tipo === 4) {
-    camposEstudiante.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
-  }
-  if (tipo === 2 || tipo === 3) {
-    camposEmpresa.forEach(id => { if (!form[id]?.value.trim()) esValido = false; });
-  }
-
-  btnActualizar.disabled = !esValido;
-  btnActualizar.classList.toggle('opacity-50', !esValido);
-  btnActualizar.classList.toggle('cursor-not-allowed', !esValido);
-}
-
-if (form) {
-  form.querySelectorAll('input, select').forEach(el => {
-    el.addEventListener('input', validarFormulario);
-    el.addEventListener('change', () => { toggleCamposEspeciales(); validarFormulario(); });
-  });
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-    formData.set('_method', 'PUT');
-    formData.set('accepted_terms', 1);
-
-    try {
-      const response = await axios.post(form.action, formData, {
-        headers: { 'Accept': 'application/json' }
-      });
-      showToast('✅ Usuario actualizado correctamente', 'success');
-      setTimeout(() => window.location.reload(), 900);
-    } catch (error) {
-      if (error.response && error.response.status === 422) {
-        const errs = error.response.data.errors || {};
-        const listado = Object.values(errs).flat().map(m => `• ${m}`).join('\n');
-        showToast('Errores de validación:\n' + listado, 'error');
-      } else if (error.response && error.response.status === 403) {
-        showToast(error.response.data?.message || 'Acción no permitida.', 'error');
-      } else {
-        showToast('❌ Error al actualizar el usuario.', 'error');
-      }
-    }
-  });
-}
-</script>
+            try {
+            await axios.post(form.action, formData, { headers: { 'Accept': 'application/json' } });
+            showToast('✅ Usuario actualizado correctamente', 'success');
+            setTimeout(() => window.location.reload(), 900);
+            } catch (error) {
+            if (error.response && error.response.status === 422) {
+                const errs = error.response.data.errors || {};
+                const listado = Object.values(errs).flat().map(m => `• ${m}`).join('\n');
+                showToast('Errores de validación:\n' + listado, 'error');
+            } else if (error.response && error.response.status === 403) {
+                showToast(error.response.data?.message || 'Acción no permitida.', 'error');
+            } else {
+                showToast('❌ Error al actualizar el usuario.', 'error');
+            }
+            }
+        });
+        }
+    </script>
 @endpush
-
-
-
