@@ -8,12 +8,9 @@ use App\Http\Controllers\web\ProfileEditController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
-use App\Http\Controllers\web\Dashboard\EventController;
-use App\Http\Controllers\web\Dashboard\SpeakerController;
+use App\Http\Controllers\Catalogs\GenderController;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', fn () => redirect()->route('panel'))->name('home');
     Route::get('/', fn () => redirect()->route('panel'))->withoutMiddleware('guest');
 
-    // Panel central (nuevo)
+    // Panel central
     Route::get('/panel', [CentralPanelController::class, 'index'])->name('panel');
 
     // Logout
@@ -87,34 +84,32 @@ Route::middleware('auth')->group(function () {
             ->name('usuarios.destroy');
 
         Route::get('/usuarios/{user}', [AdminController::class, 'show'])
-        ->name('usuarios.show');
-
+            ->name('usuarios.show');
     });
 
     /**
      * Rutas para editar mi propio perfil (Admin y SuperAdmin)
      */
-
     Route::middleware(['web', 'auth', 'role:admin|superadmin'])
-    ->prefix('profile')
-    ->name('profile.')
-    ->group(function () {
-    // Editar perfil
-    Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
-    ->name('edit');
+        ->prefix('profile')
+        ->name('profile.')
+        ->group(function () {
+            // Editar perfil
+            Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
+                ->name('edit');
 
-    // Actualizar perfil
-    Route::match(['POST', 'PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
-    ->name('update');
+            // Actualizar perfil
+            Route::match(['POST', 'PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
+                ->name('update');
 
-    // Actualizar contraseña
-    Route::match(['POST', 'PUT'], 'update-password/{user}', [ProfileEditController::class, 'updatePassword'])
-    ->name('update-password'); // Nueva ruta para actualizar la contraseña
+            // Actualizar contraseña
+            Route::match(['POST', 'PUT'], 'update-password/{user}', [ProfileEditController::class, 'updatePassword'])
+                ->name('update-password');
 
-    // Cancelar
-    Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
-    ->name('cancel');
-    });
+            // Cancelar edición
+            Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
+                ->name('cancel');
+        });
 
     /**
      * Rutas de Usuario estándar
@@ -123,24 +118,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/user', [UserController::class, 'index'])
             ->name('dashboards.user');
     });
-});
 
-Route::middleware(['auth'])->group(function () {
-    Route::resource('speakers', EventController::class)->only([]); // evita colisión si ya existía
-    Route::resource('events', SpeakerController::class)->only([]); // evita colisión si ya existía
+    /**
+    * Rutas de los administradores y superadministradores para gestionar géneros
+    */
+    Route::middleware(['auth','role:admin|superadmin'])->group(function () {
+    Route::get('/genders', [GenderController::class, 'index'])->name('genders.index');
+    Route::get('/genders/list', [GenderController::class, 'list'])->name('genders.list');
+    Route::post('/genders', [GenderController::class, 'store'])->name('genders.store');
+    Route::put('/genders/{gender}', [GenderController::class, 'update'])->name('genders.update');
+    Route::delete('/genders/{gender}', [GenderController::class, 'destroy'])->name('genders.destroy');
+    });
+    
 });
-
-Route::middleware(['auth'])->group(function () {
-    Route::resource('speakers', SpeakerController::class)->names('speakers');
-    Route::resource('events', EventController::class)->names('events');
-});
-
-Route::get('/debug/db', function () {
-return [
-'connection' => config('database.default'),
-'db_name' => DB::connection()->getDatabaseName(),
-'driver' => DB::connection()->getDriverName(),
-'users_count'=> User::count(),
-'last_user' => optional(User::query()->latest('id')->first())->only(['id','email','created_at']),
-];
-})->middleware('auth');
