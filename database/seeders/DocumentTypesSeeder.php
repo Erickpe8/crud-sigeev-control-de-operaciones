@@ -6,7 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\DocumentType;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
+use Carbon\Carbon;  
 
 class DocumentTypesSeeder extends Seeder
 {
@@ -15,35 +15,35 @@ class DocumentTypesSeeder extends Seeder
         $document_types = [
             [
                 'uuid' => Str::uuid(),
-                'name' => 'Cédula de Ciudadanía',
+                'name' => 'Cédula de Ciudadanía', 
                 'code' => 'CC',
-                'created_at' => now(),
-                'updated_at' => now()
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
             ],
             [
                 'uuid' => Str::uuid(),
-                'name' => 'Pasaporte',
+                'name' => 'Pasaporte', 
                 'code' => 'PASS',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
                 'uuid' => Str::uuid(),
-                'name' => 'Tarjeta de Identidad',
+                'name' => 'Tarjeta de Identidad', 
                 'code' => 'TI',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
                 'uuid' => Str::uuid(),
-                'name' => 'Cédula de Extranjería',
+                'name' => 'Cédula Extranjera', 
                 'code' => 'CE',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
                 'uuid' => Str::uuid(),
-                'name' => 'Tarjeta de Residencia',
+                'name' => 'Tarjeta de Residencia', 
                 'code' => 'TR',
                 'created_at' => now(),
                 'updated_at' => now()
@@ -53,5 +53,7 @@ class DocumentTypesSeeder extends Seeder
         foreach ($document_types as $document_type) {
             DocumentType::create($document_type);
         }
+
+        $this->command->info('Documentos creados exitosamente!');
     }
 }

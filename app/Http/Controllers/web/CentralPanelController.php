@@ -108,6 +108,23 @@ class CentralPanelController extends Controller
                 'icon'        => '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24"><path fill="#E10600" d="M9 14c1.381 0 2.631-.56 3.536-1.465C13.44 11.631 14 10.381 14 9s-.56-2.631-1.464-3.535C11.631 4.56 10.381 4 9 4s-2.631.56-3.536 1.465C4.56 6.369 4 7.619 4 9s.56 2.631 1.464 3.535A5 5 0 0 0 9 14m0 7c3.518 0 6-1 6-2c0-2-2.354-4-6-4c-3.75 0-6 2-6 4c0 1 2.25 2 6 2m12-9h-2v-2a1 1 0 1 0-2 0v2h-2a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2" stroke-width="0.5" stroke="#E10600"/></svg>',
                 'active'      => ['panel.usuarios.crear'],
             ],
+
+            // === Todos pueden ver este módulo ===
+
+            [
+                'key' => 'documents_admin',
+                'title' => 'Manage Documents',
+                'description' => 'Browse, create, edit and delete documents.',
+                'permission' => 'documents.view',
+                'roles' => ['admin','superadmin'],
+                'route' => 'panel.document-types.index',
+                'icon' => '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24">
+                    <path fill="#E10600"
+                        d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m7 1.5V8h4.5M8 11h8v2H8v-2m0 4h8v2H8v-2Z" />
+                    </svg>',
+                'active' => ['panel.documents.*'],
+            ],
+
         ];
     }
 
@@ -115,7 +132,7 @@ class CentralPanelController extends Controller
     private function canSee(array $module, $user): bool
     {
         $rolesOk = empty($module['roles']) || $user->hasAnyRole($module['roles']);
-        $permOk  = empty($module['permission']) || $user->can($module['permission']) || $user->hasPermissionTo($module['permission']);
+        $permOk = empty($module['permission']) || $user->can($module['permission']);
         return $rolesOk && $permOk;
     }
 

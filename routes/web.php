@@ -9,6 +9,7 @@ use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
 use App\Http\Controllers\Catalogs\GenderController;
+use App\Http\Controllers\web\Dashboard\DocumentTypeController;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 
@@ -120,14 +121,33 @@ Route::middleware('auth')->group(function () {
     });
 
     /**
-    * Rutas de los administradores y superadministradores para gestionar géneros
+    * Rutas de los administradores y superadministradores para gestionar tipos de documento
     */
-    Route::middleware(['auth','role:admin|superadmin'])->group(function () {
-    Route::get('/genders', [GenderController::class, 'index'])->name('genders.index');
-    Route::get('/genders/list', [GenderController::class, 'list'])->name('genders.list');
-    Route::post('/genders', [GenderController::class, 'store'])->name('genders.store');
-    Route::put('/genders/{gender}', [GenderController::class, 'update'])->name('genders.update');
-    Route::delete('/genders/{gender}', [GenderController::class, 'destroy'])->name('genders.destroy');
+
+    Route::middleware(['auth'])->group(function () {
+    // Vista (ya la tienes)
+    Route::get('/panel/document-types', [DocumentTypeController::class, 'index'])
+    ->name('panel.document-types.index')
+    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.ver']);
+
+    // Listado JSON que usa el DataTable (ya lo sugerimos antes)
+    Route::get('/panel/document-types/list', [DocumentTypeController::class, 'list'])
+    ->name('dashboard.document-types.list')
+    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.ver']);
+
+    // STORE que pide tu Blade por nombre: dashboard.document-types.store
+    Route::post('/dashboard/document-types', [DocumentTypeController::class, 'store'])
+    ->name('dashboard.document-types.store')
+    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.crear']);
+
+    //UPDATE: tu Blade hace axios.put a /dashboard/document-types/{id}
+    Route::put('/dashboard/document-types/{id}', [DocumentTypeController::class, 'update'])
+    ->name('dashboard.document-types.update')
+    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.editar']);
+
+    // (opcional) DELETE si tu UI lo invoca
+    Route::delete('/dashboard/document-types/{id}', [DocumentTypeController::class, 'destroy'])
+    ->name('dashboard.document-types.destroy')
+    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.eliminar']);
     });
-    
 });
