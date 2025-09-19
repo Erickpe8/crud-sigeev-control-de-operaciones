@@ -12,7 +12,12 @@ class DocumentTypeController extends Controller
     public function __construct()
     {
         $this->middleware(['auth','role:admin|superadmin']);
+        $this->middleware('permission:document_types.view')->only(['index','list']);
+        $this->middleware('permission:document_types.create')->only(['store']);
+        $this->middleware('permission:document_types.edit')->only(['update']);
+        $this->middleware('permission:document_types.delete')->only(['destroy']);
     }
+
 
     public function index(Request $request)
     {

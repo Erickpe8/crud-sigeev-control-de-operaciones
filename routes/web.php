@@ -8,9 +8,7 @@ use App\Http\Controllers\web\ProfileEditController;
 use App\Http\Controllers\web\Dashboard\SuperAdminController;
 use App\Http\Controllers\web\Dashboard\AdminController;
 use App\Http\Controllers\web\Dashboard\UserController;
-use App\Http\Controllers\Catalogs\GenderController;
 use App\Http\Controllers\web\Dashboard\DocumentTypeController;
-use Illuminate\Support\Facades\DB;
 use App\Models\User;
 
 /*
@@ -95,21 +93,10 @@ Route::middleware('auth')->group(function () {
         ->prefix('profile')
         ->name('profile.')
         ->group(function () {
-            // Editar perfil
-            Route::get('edit/{user}', [ProfileEditController::class, 'edit'])
-                ->name('edit');
-
-            // Actualizar perfil
-            Route::match(['POST', 'PUT'], 'update/{user}', [ProfileEditController::class, 'update'])
-                ->name('update');
-
-            // Actualizar contraseña
-            Route::match(['POST', 'PUT'], 'update-password/{user}', [ProfileEditController::class, 'updatePassword'])
-                ->name('update-password');
-
-            // Cancelar edición
-            Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])
-                ->name('cancel');
+            Route::get('edit/{user}', [ProfileEditController::class, 'edit'])->name('edit');
+            Route::match(['POST', 'PUT'], 'update/{user}', [ProfileEditController::class, 'update'])->name('update');
+            Route::match(['POST', 'PUT'], 'update-password/{user}', [ProfileEditController::class, 'updatePassword'])->name('update-password');
+            Route::get('cancel', [ProfileEditController::class, 'cancelEdit'])->name('cancel');
         });
 
     /**
@@ -121,33 +108,34 @@ Route::middleware('auth')->group(function () {
     });
 
     /**
-    * Rutas de los administradores y superadministradores para gestionar tipos de documento
-    */
+     * ===============================
+     * Document Types (Admin/SuperAdmin)
+     * ===============================
+     */
+    // Vista principal (panel)
+    Route::middleware(['auth','role:admin|superadmin','permission:document_types.view'])
+        ->prefix('panel')->name('panel.')->group(function () {
+            Route::get('document-types', [DocumentTypeController::class, 'index'])
+                ->name('document-types.index');
+        });
 
-    Route::middleware(['auth'])->group(function () {
-    // Vista (ya la tienes)
-    Route::get('/panel/document-types', [DocumentTypeController::class, 'index'])
-    ->name('panel.document-types.index')
-    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.ver']);
+    // Endpoints AJAX
+    Route::middleware(['auth','role:admin|superadmin'])
+        ->prefix('dashboard')->name('dashboard.')->group(function () {
+            Route::get('document-types/list', [DocumentTypeController::class, 'list'])
+                ->name('document-types.list')
+                ->middleware('permission:document_types.view');
 
-    // Listado JSON que usa el DataTable (ya lo sugerimos antes)
-    Route::get('/panel/document-types/list', [DocumentTypeController::class, 'list'])
-    ->name('dashboard.document-types.list')
-    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.ver']);
+            Route::post('document-types', [DocumentTypeController::class, 'store'])
+                ->name('document-types.store')
+                ->middleware('permission:document_types.create');
 
-    // STORE que pide tu Blade por nombre: dashboard.document-types.store
-    Route::post('/dashboard/document-types', [DocumentTypeController::class, 'store'])
-    ->name('dashboard.document-types.store')
-    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.crear']);
+            Route::put('document-types/{id}', [DocumentTypeController::class, 'update'])
+                ->name('document-types.update')
+                ->middleware('permission:document_types.edit');
 
-    //UPDATE: tu Blade hace axios.put a /dashboard/document-types/{id}
-    Route::put('/dashboard/document-types/{id}', [DocumentTypeController::class, 'update'])
-    ->name('dashboard.document-types.update')
-    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.editar']);
-
-    // (opcional) DELETE si tu UI lo invoca
-    Route::delete('/dashboard/document-types/{id}', [DocumentTypeController::class, 'destroy'])
-    ->name('dashboard.document-types.destroy')
-    ->middleware(['role:admin|superadmin', 'permission:tipos_documento.eliminar']);
-    });
+            Route::delete('document-types/{id}', [DocumentTypeController::class, 'destroy'])
+                ->name('document-types.destroy')
+                ->middleware('permission:document_types.delete');
+        });
 });

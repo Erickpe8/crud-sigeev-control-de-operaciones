@@ -11,21 +11,23 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpia la caché de permisos/roles para evitar lecturas desactualizadas
+        // 1) Limpia caché de Spatie para evitar lecturas desactualizadas
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Asegura que existan los roles con el guard correcto
-        $adminRole      = Role::firstOrCreate(['name' => 'admin',      'guard_name' => 'web']);
+        // 2) Asegura roles base con guard web
         $superAdminRole = Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
+        $adminRole      = Role::firstOrCreate(['name' => 'admin',      'guard_name' => 'web']);
         $userRole       = Role::firstOrCreate(['name' => 'user',       'guard_name' => 'web']);
 
-        // Si aún no corriste PermissionSeeder, lo ejecuta
-        if (Permission::count() === 0) {
-            $this->call(PermissionSeeder::class);
+        // 3) (Opcional) Si tienes un PermissionSeeder aparte, ejecútalo si no hay permisos aún
+        if (Permission::count() === 0 && class_exists(\Database\Seeders\PermissionSeeder::class)) {
+            $this->call(\Database\Seeders\PermissionSeeder::class);
         }
 
-        // ---------- Permisos base ----------
-        $adminPerms = [
+        // 4) Catálogo de permisos estándar (guard web)
+        //    - Incluye CRUD básicos de tus catálogos
+        //    - Unifica "events.index" (viejo) a "events.view" (nuevo)
+        $permissionNames = [
             // Dashboard
             'dashboard.view',
 
@@ -38,30 +40,52 @@ class RolePermissionSeeder extends Seeder
             // Documents
             'documents.view', 'documents.create', 'documents.edit', 'documents.delete',
 
-            // Catalogs
+            // Catálogos
+            'document_types.view', 'document_types.create', 'document_types.edit', 'document_types.delete',
+            'genders.view',         'genders.create',         'genders.edit',         'genders.delete',
+            'user_types.view',      'user_types.create',      'user_types.edit',      'user_types.delete',
+            'institutions.view',    'institutions.create',    'institutions.edit',    'institutions.delete',
+            'academic_programs.view','academic_programs.create','academic_programs.edit','academic_programs.delete',
+
+            // Events (nuevo nombre)
+            'events.view',
+        ];
+
+        // Soporte para alias heredado: si tenías events.index, lo normalizamos a events.view
+        // Creamos ambos para no romper migraciones antiguas; luego administrativamente usarás "events.view"
+        $aliases = [
+            'events.index' => 'events.view',
+        ];
+
+        // 5) Crear/asegurar permisos con guard web
+        $created = [];
+        foreach ($permissionNames as $p) {
+            $created[$p] = Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
+        }
+
+        // Asegura/crea alias y opcionalmente los reasigna a su target (no borramos alias para no romper)
+        foreach ($aliases as $legacy => $target) {
+            $created[$legacy] = Permission::firstOrCreate(['name' => $legacy, 'guard_name' => 'web']);
+            // Si quieres que admin tenga ambos, deja así; si prefieres solo el target, asigna solo $target más abajo
+        }
+
+        // 6) Armar paquetes por rol
+        $adminPerms = [
+            'dashboard.view',
+            'users.view', 'users.create', 'users.manage', 'users.delete',
+            'roles.manage', 'permissions.manage',
+            'documents.view', 'documents.create', 'documents.edit', 'documents.delete',
             'document_types.view', 'document_types.create', 'document_types.edit', 'document_types.delete',
             'genders.view', 'genders.create', 'genders.edit', 'genders.delete',
             'user_types.view', 'user_types.create', 'user_types.edit', 'user_types.delete',
             'institutions.view', 'institutions.create', 'institutions.edit', 'institutions.delete',
             'academic_programs.view', 'academic_programs.create', 'academic_programs.edit', 'academic_programs.delete',
+            // Events
+            'events.view',
+            // Si quieres compatibilidad con código viejo:
+            'events.index',
         ];
 
-        // Opcionales: agrega si existen para no romper si no están en PermissionSeeder
-        $optional = ['events.view'];
-        foreach ($optional as $opt) {
-            if (Permission::where('name', $opt)->exists()) {
-                $adminPerms[] = $opt;
-            }
-        }
-        $adminPerms = array_values(array_unique($adminPerms));
-
-        // Asigna permisos al rol admin
-        $adminRole->givePermissionTo($adminPerms);
-
-        // Superadmin: todos los permisos existentes
-        $superAdminRole->givePermissionTo(Permission::all());
-
-        // User: solo lectura básica (y events.view si existe)
         $userRead = [
             'dashboard.view',
             'documents.view',
@@ -70,14 +94,20 @@ class RolePermissionSeeder extends Seeder
             'user_types.view',
             'institutions.view',
             'academic_programs.view',
+            // Events
+            'events.view',
+            // Si tu app vieja chequea este permiso:
+            'events.index',
         ];
-        if (Permission::where('name', 'events.view')->exists()) {
-            $userRead[] = 'events.view';
-        }
-        $userRead = array_values(array_unique($userRead));
-        $userRole->givePermissionTo($userRead);
 
-        // Limpia nuevamente la caché
+        // 7) Asignación idempotente
+        $adminRole->syncPermissions($adminPerms);
+        $userRole->syncPermissions($userRead);
+
+        // 8) Superadmin: todos los permisos existentes (actual y futuros)
+        $superAdminRole->syncPermissions(Permission::all());
+
+        // 9) Limpia caché nuevamente
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

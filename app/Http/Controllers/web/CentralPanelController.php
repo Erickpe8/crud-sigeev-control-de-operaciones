@@ -112,18 +112,19 @@ class CentralPanelController extends Controller
             // === Todos pueden ver este módulo ===
 
             [
-                'key' => 'documents_admin',
-                'title' => 'Manage Documents',
-                'description' => 'Browse, create, edit and delete documents.',
-                'permission' => 'documents.view',
-                'roles' => ['admin','superadmin'],
-                'route' => 'panel.document-types.index',
-                'icon' => '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24">
+                'key'         => 'document_types_admin',
+                'title'       => 'Tipos de Documento',
+                'description' => 'Gestiona, crea, edita y elimina tipos de documento.',
+                'permission'  => 'document_types.view',         
+                'roles'       => ['admin','superadmin'],
+                'route'       => 'panel.document-types.index',
+                'icon'        => '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24">
                     <path fill="#E10600"
                         d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m7 1.5V8h4.5M8 11h8v2H8v-2m0 4h8v2H8v-2Z" />
                     </svg>',
-                'active' => ['panel.documents.*'],
+                'active'      => ['panel.document-types.*', 'dashboard.document-types.*'],
             ],
+
 
         ];
     }
